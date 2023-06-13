@@ -1,0 +1,1 @@
+﻿Get-ADComputer -filter * | Export-CSV c:\scripts\exportJustComputers\all_computers.csv -NoTypeInformation

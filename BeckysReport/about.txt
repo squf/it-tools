@@ -1,0 +1,4 @@
+run BeckysReport.ps1 first, it will output a .csv file
+run BeckysReport.py next, it will cleanup the .csv file and output an .xlsx format of it with timestamp
+
+note: typically have to run the .py script from Thonny, doesn't seem to work from just a python shell, probably because it needs to load in the .csv as a dataframe and then make edits to it and the shell just closes out immediately
