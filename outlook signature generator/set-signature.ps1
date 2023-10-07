@@ -1,3 +1,4 @@
+# this script is meant to be set up as a group policy
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass -Force
 
 $sourceFolder = '\\server\folder'
