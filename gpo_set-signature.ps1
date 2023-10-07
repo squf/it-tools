@@ -1,38 +1,26 @@
-﻿# bypass certificate errors
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass -Force
+﻿Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass -Force
 
-# Set the source folder for the .htm files located on MAILGET.corp.artera.com
-$sourceFolder = '\\172.26.215.62\sigs'
-
-# Get the current user's username
+$sourceFolder = '\\server\folder'
 $currentUserName = $env:USERNAME
-
-# Construct the source file path
 $sourceFileName = "$currentUserName"
 $sourceFilePath = Join-Path -Path $sourceFolder -ChildPath "$sourceFileName.htm"
-
-# Set the destination folder path for signatures, if it does not exist, create it and proceed
 $destinationFolder = "$env:APPDATA\Microsoft\Signatures"
-
 if (-not (Test-Path -Path $destinationFolder)) {
     New-Item -Path $destinationFolder -ItemType Directory -Force | Out-Null
     "Destination folder created." | Out-File -FilePath $outputFilePath -Append -Force
 }
 
-# Construct the destination file path
 $destinationFileName = "$currentUserName.htm"
 $destinationFilePath = Join-Path -Path $destinationFolder -ChildPath $destinationFileName
-$outputFilePath = "C:\users\$env:USERNAME\MillerSignature.txt"
+$outputFilePath = "C:\users\$env:USERNAME\sig-log.txt"
 "Destination folder created." | Out-File -FilePath $outputFilePath -Append -Force
 $sourceFilePath | Out-File -FilePath $outputFilePath -Append -Force
 $destinationFilePath | Out-File -FilePath $outputFilePath -Append -Force
 "Checking if source file exists..." | Out-File -FilePath $outputFilePath -Append -Force
 
-# Check if the source file exists
 if (Test-Path -Path $sourceFilePath) {
     "Source file found. Copying to destination..." | Out-File -FilePath $outputFilePath -Append -Force
     }
-    # Copy the source file to the destination folder
     try {
         Copy-Item -Path $sourceFilePath -Destination $destinationFilePath -Force -ErrorAction Stop
     }
