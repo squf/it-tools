@@ -1,4 +1,3 @@
-# replace "EXAMPLE" text
 import pandas as pd
 
 df = pd.read_csv('DevicesWithInventory.csv')
