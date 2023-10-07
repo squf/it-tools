@@ -1,3 +1,5 @@
+# built for deployment
+# intune, pdqdeploy, gpo, et al.
 ﻿$LocalIconFolderPath = "C:\Program Files (x86)\Microsoft\Edge\Application"
 $SourceIcon = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 $DestinationIcon = "C:\Program Files (x86)\Microsoft\Edge\Application"
