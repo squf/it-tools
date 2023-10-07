@@ -1,13 +1,8 @@
+# replace "EXAMPLE" text
 import pandas as pd
 
-# Import the CSV file as a Pandas dataframe
 df = pd.read_csv('DevicesWithInventory.csv')
-
-# Fill NaN values in the 'Device name' column with an empty string
 df['Device name'].fillna('', inplace=True)
-
-# Filter the dataframe to keep only rows where 'Device name' starts with 'WINS-'
-df = df[df['Device name'].str.startswith('MILLER-iPad-')]
-
-# Export the filtered dataframe to an XLSX file in the specified directory
-df.to_excel('C:/scripts/Intune Reports/Miller Intune iPAD Devices.xlsx', index=False)
+# Filter the dataframe to keep only rows where 'Device name' starts with 'EXAMPLE-' -- filter this for the Intune group you're looking for
+df = df[df['Device name'].str.startswith('EXAMPLE-')]
+df.to_excel('C:/folder/EXAMPLE.xlsx', index=False)
