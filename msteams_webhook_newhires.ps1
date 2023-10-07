@@ -8,7 +8,7 @@ $creationThreshold = $currentTime.AddHours(-1)
 $NewUsersTable = New-Object 'System.Collections.Generic.List[System.Object]'
 $ArrayTable = New-Object 'System.Collections.Generic.List[System.Object]'
 
-$users = Get-ADUser -Filter * -SearchBase "OU=Millerpipeline,OU=artera.com,DC=corp,DC=artera,DC=com" -SearchScope Subtree -Properties WhenCreated | Where-Object { $_.WhenCreated -ge $creationThreshold }
+$users = Get-ADUser -Filter * -SearchBase "OU=example,OU=company.com,DC=corp,DC=company,DC=com" -SearchScope Subtree -Properties WhenCreated | Where-Object { $_.WhenCreated -ge $creationThreshold }
 foreach ($user in $users) {
     Write-Host "Working on $($user.Name)" -ForegroundColor White
 
