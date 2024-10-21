@@ -15,7 +15,7 @@ ad_missing_in_entra = ad_computers[~ad_computers['Name'].isin(entra_computers['N
 
 entra_missing_in_ad = entra_computers[~entra_computers['Name'].isin(ad_computers['Name'])]
 
-output_path = r'C:\users\danielq\documents\reports\computers\Computer_Comparison.xlsx'
+output_path = r'C:\reports\Computer_Comparison.xlsx'
 with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
     ad_computers.to_excel(writer, sheet_name='AD Computers', index=False)
     entra_computers.to_excel(writer, sheet_name='Entra Computers', index=False)
