@@ -10,7 +10,7 @@
 
 note: typically have to run the .py script from an IDE, doesn't seem to work from just a python shell, probably because it needs to load in the .csv as a dataframe and then make edits to it and the shell just closes out immediately i assume
 
-# general powershell notes
+# general powershell tips for common AD reporting use-cases
 
 - take for example, you want to quickly export a security group from AD and include some info like their Name and Job title:
 - `Get-ADGroupMember -identity "Group Users" | Get-ADUser -properties Title | select name, title | export-csv "C:\somedirectory\groupusers.csv"`
