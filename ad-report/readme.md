@@ -1,4 +1,4 @@
-# quarterly report on AD users and their status
+# scripts in this repo notes
 
 - at one of my jobs i had to provide an Excel report every quarter on our entire AD user inventory, with the status of the user (Disabled, PWD expired, etc)
 - that's what these scripts were for
