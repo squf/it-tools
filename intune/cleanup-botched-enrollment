@@ -1,0 +1,19 @@
+Unregister-ScheduledTask -TaskName "TriggerEnrollment" -Confirm:$false
+Write-Host "Scheduled task 'TriggerEnrollment' removed."
+
+Remove-Item -Path "C:\Recovery\Customizations\*.ppkg" -Force -Recurse
+Write-Host "PPKG files removed from C:\Recovery\Customizations."
+
+Remove-Item -Path "$env:ProgramData\Microsoft\Provisioning\*.ppkg" -Force -Recurse
+Write-Host "PPKG files removed from %ProgramData%\Microsoft\Provisioning."
+
+$regPaths = @(
+    "HKLM:\SYSTEM\CurrentControlSet\Services\dmwappushservice",
+    "HKLM:\SOFTWARE\Microsoft\Provisioning",
+    "HKLM:\SOFTWARE\Microsoft\Enrollments"
+)
+
+foreach ($path in $regPaths) {
+    Remove-Item -Path $path -Force -Recurse
+    Write-Host "Registry key $path removed."
+}
