@@ -17,3 +17,12 @@
 * for reference at my current environment i can't use `pip install` to add python dependencies so i need to run the following line for all pip installs:
 
 * `pip install --trusted-host=pypi.org --trusted-host=files.pythonhosted.org [input python library name here, e.g., pandas]`
+
+# graph x ray tool:
+
+* https://graphxray.merill.net/
+* this tool is really good for finding API endpoints
+* install it > in browser open developer tools | go to ... menu > more tools > developer tools (ctrl+shift+i - shortcut) > click the little >> menu in dev tools > open up graph x ray blade
+* with x ray open, just start clicking around in any of the microsoft admin portals
+* the x ray will start showing you the API endpoints / GET requests being made, and even can output stuff to javascript / powershell / etc. for you as well
+* this is useful for finding what endpoint to target with other scripts like the ones i'll be building in this directory
