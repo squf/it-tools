@@ -2,7 +2,9 @@
 
 * i would like to be able to query graph api with python to simplify many processes in my current role
 * (i could use powershell instead, i could install powershell on debian, i could have powershell export things to .csv or .json for me and then run a separate script on them with python, etc.)
-* (i choose to use python out of personal preference, i prefer just doing things directly in bash without an ide, i prefer sticking to my wsl2 debian terminal as much as possible, python exposes a wider array of libraries than powershell does for other use-cases)
+* (i choose to use python out of personal preference, i prefer just doing things directly in bash without an ide, i prefer sticking to my wsl2 debian terminal as much as possible, python exposes a wider array of options than powershell does for other use-cases)
+* (maybe for some scripts i want to export them in a chart format with something like matplotlib, or maybe i want to put them into an internal website on django or on and on)
+* (at the end of the day it is just my personal preference, so, if you prefer powershell or another language for doing these things then this repo may not be very useful for you)
 * often i am asked to provide lots of reports from Entra / Exchange / Teams / Intune / M365 Admin / Purview / et al. Microsoft related admin portals
 * all of these can be queried in one way or another via graph, and doing so via api will likely expose even more details for me than the GUI
 * i am in a Windows shop using a Windows work PC, so you're not gonna believe what's coming next, that's right I'm going to use WSL2 Debian to host my python venv and all dependencies
