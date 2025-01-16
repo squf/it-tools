@@ -42,84 +42,62 @@ headers = {
 }
 
 def get_group_name(group_id):
+    """Fetch group displayName from its GUID. Fallback to GUID if it fails."""
     group_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}"
-    group_response = requests.get(group_url, headers=headers)
-    group_response.raise_for_status()
-    group_data = group_response.json()
-    return group_data.get('displayName', group_id)
+    resp = requests.get(group_url, headers=headers)
+    if resp.status_code == 200:
+        return resp.json().get("displayName", group_id)
+    return group_id
 
-groups_url = "https://graph.microsoft.com/v1.0/groups"
-groups_response = requests.get(groups_url, headers=headers)
-groups_response.raise_for_status()
-groups_data = groups_response.json().get('value', [])
-
-if not groups_data:
-    print("No groups found.")
-    exit()
-
-all_dc = []
-for group in groups_data:
-    group_id = group["id"]
-    group_name = group["displayName"]
-    print(f"Processing group '{group_name}' with id: {group_id}")
-
-    dcp_url = "https://graph.microsoft.com/beta/deviceManagement/deviceCompliancePolicies?$expand=assignments"
-    dcp_response = requests.get(dcp_url, headers=headers)
-    dcp_response.raise_for_status()
-    all_policies = dcp_response.json().get('value', [])
-
-    assigned_policies = [
-        p for p in all_policies
-        if any(a['target'].get('groupId') == group_id for a in p.get('assignments', []))
+def main():
+    endpoints = [
+        "https://graph.microsoft.com/beta/deviceManagement/deviceConfigurations?$expand=assignments",
+        "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies?$expand=assignments"
     ]
-    print(f"Device Compliance Policies assigned to '{group_name}':")
-    for p in assigned_policies:
-        print("   ", p["displayName"])
 
-    dcuris = {
-        "ConfigurationPolicies": "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies?$expand=assignments",
-        "DeviceConfigurations": "https://graph.microsoft.com/beta/deviceManagement/deviceConfigurations?$expand=assignments",
-        "GroupPolicyConfigurations": "https://graph.microsoft.com/beta/deviceManagement/groupPolicyConfigurations?$expand=assignments",
-        "MobileAppConfigurations": "https://graph.microsoft.com/beta/deviceAppManagement/mobileAppConfigurations?$expand=assignments"
-    }
-
-    for name, url in dcuris.items():
+    all_policies = []
+    for url in endpoints:
         resp = requests.get(url, headers=headers)
         resp.raise_for_status()
-        configs = resp.json().get('value', [])
-        assigned_configs = [
-            c for c in configs
-            if any(a['target'].get('groupId') == group_id for a in c.get('assignments', []))
-        ]
-        all_dc.extend(assigned_configs)
-        if assigned_configs:
-            print(f"\n[{name}] assigned to '{group_name}':")
-            for dc in assigned_configs:
-                display_name = dc.get('displayName') or dc.get('name')
-                print("   ", display_name)
+        items = resp.json().get("value", [])
+        if items:
+            all_policies.extend(items)
 
-if all_dc:
+    print(f"Retrieved {len(all_policies)} configuration policy objects from both endpoints.")
+
     policy_data = []
-    for dc in all_dc:
+    for policy in all_policies:
+        policy_name = policy.get("displayName", "")
+        description = policy.get("description", "")
+
+        assignments = policy.get("assignments", [])
         included_groups = []
         excluded_groups = []
-        for assignment in dc.get('assignments', []):
-            group_id = assignment['target']['groupId']
-            group_name = get_group_name(group_id)
-            if assignment['target']['@odata.type'] == '#microsoft.graph.exclusionGroupAssignmentTarget':
-                excluded_groups.append(group_name)
+
+        for assignment in assignments:
+            target = assignment.get("target", {})
+            assignment_type = target.get("@odata.type", "").lower()
+            group_id = target.get("groupId")
+
+            if group_id:
+                group_name = get_group_name(group_id)
+                if "exclusiongroupassignmenttarget" in assignment_type:
+                    excluded_groups.append(group_name)
+                else:
+                    included_groups.append(group_name)
             else:
-                included_groups.append(group_name)
-        
+                included_groups.append("Non-Group Target (All Devices/Users/Filter?)")
+
         policy_data.append({
-            'Policy Name': dc.get('displayName') or dc.get('name'),
-            'Description': dc.get('description'),
-            'Included Groups': ', '.join(included_groups),
-            'Excluded Groups': ', '.join(excluded_groups)
+            "Policy Name": policy_name,
+            "Description": description,
+            "Included Groups": ", ".join(included_groups),
+            "Excluded Groups": ", ".join(excluded_groups)
         })
 
     df = pd.DataFrame(policy_data)
-    df.to_csv('intune_deviceConfigPolicies.csv', index=False)
-    print("\nExported Intune Device Configuration Policies to intune_deviceConfigPolicies.csv")
-else:
-    print("No assigned device configurations found.")
+    df.to_csv("intune_winDeviceConfigPolicies.csv", index=False)
+    print("\nExported all Windows device configuration policies to intune_winDeviceConfigPolicies.csv")
+
+if __name__ == "__main__":
+    main()
