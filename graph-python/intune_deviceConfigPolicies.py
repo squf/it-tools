@@ -1,6 +1,7 @@
 """
 about:
 
+- first off this assumes you have a .env and entra app set up for handling client-secret authentication
 - this script will loop through every group in intune in your tenant and find which config policies are assigned to it
 - prints in terminal and also spits out a .csv when its done (intune_deviceConfigPolicies.csv)
 - this is lowkey goated when finding config policy group assignments is the vibe
@@ -9,6 +10,7 @@ about:
 - so therefore, this script will make direct HTTP requests to graph api endpoints
 - there is another option to use the msgraph python library instead, but i wanted to use direct API requests instead because i am hoping it will be a more stable way of using this script for a longer period of time
 - i dont know what wacky changes microsoft might make to the msgraph sdk at any given time 
+- also includes some logic to handle converting GUID to human readable format for groups, very nice
 
 dependencies:
 
@@ -39,6 +41,13 @@ headers = {
     "Content-Type": "application/json"
 }
 
+def get_group_name(group_id):
+    group_url = f"https://graph.microsoft.com/v1.0/groups/{group_id}"
+    group_response = requests.get(group_url, headers=headers)
+    group_response.raise_for_status()
+    group_data = group_response.json()
+    return group_data.get('displayName', group_id)
+
 groups_url = "https://graph.microsoft.com/v1.0/groups"
 groups_response = requests.get(groups_url, headers=headers)
 groups_response.raise_for_status()
@@ -53,6 +62,7 @@ for group in groups_data:
     group_id = group["id"]
     group_name = group["displayName"]
     print(f"Processing group '{group_name}' with id: {group_id}")
+
     dcp_url = "https://graph.microsoft.com/beta/deviceManagement/deviceCompliancePolicies?$expand=assignments"
     dcp_response = requests.get(dcp_url, headers=headers)
     dcp_response.raise_for_status()
@@ -87,13 +97,13 @@ for group in groups_data:
             for dc in assigned_configs:
                 display_name = dc.get('displayName') or dc.get('name')
                 print("   ", display_name)
-
+                
 if all_dc:
     policy_data = [{
         'Policy Name': dc.get('displayName') or dc.get('name'),
         'Description': dc.get('description'),
         'Assigned Groups': ', '.join([
-            a['target']['groupId'] for a in dc.get('assignments', [])
+            get_group_name(a['target']['groupId']) for a in dc.get('assignments', [])
             if a['target'].get('groupId')
         ])
     } for dc in all_dc]
