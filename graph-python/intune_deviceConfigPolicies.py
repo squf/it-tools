@@ -3,9 +3,7 @@ about:
 
 - first off this assumes you have a .env and entra app set up for handling client-secret authentication
 - this script will loop through every group in intune in your tenant and find which config policies are assigned to it
-- prints in terminal and also spits out a .csv when its done (intune_deviceConfigPolicies.csv)
-- this is lowkey goated when finding config policy group assignments is the vibe
-- im sorry for that last sentence
+- spits out a .csv when its done (intune_winDeviceConfigPolicies.csv)
 - this script is built on the azure.identity python library for token authentication to Graph API 
 - so therefore, this script will make direct HTTP requests to graph api endpoints
 - there is another option to use the msgraph python library instead, but i wanted to use direct API requests instead because i am hoping it will be a more stable way of using this script for a longer period of time
