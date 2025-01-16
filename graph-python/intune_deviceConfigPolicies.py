@@ -97,16 +97,26 @@ for group in groups_data:
             for dc in assigned_configs:
                 display_name = dc.get('displayName') or dc.get('name')
                 print("   ", display_name)
-                
+
 if all_dc:
-    policy_data = [{
-        'Policy Name': dc.get('displayName') or dc.get('name'),
-        'Description': dc.get('description'),
-        'Assigned Groups': ', '.join([
-            get_group_name(a['target']['groupId']) for a in dc.get('assignments', [])
-            if a['target'].get('groupId')
-        ])
-    } for dc in all_dc]
+    policy_data = []
+    for dc in all_dc:
+        included_groups = []
+        excluded_groups = []
+        for assignment in dc.get('assignments', []):
+            group_id = assignment['target']['groupId']
+            group_name = get_group_name(group_id)
+            if assignment['target']['@odata.type'] == '#microsoft.graph.exclusionGroupAssignmentTarget':
+                excluded_groups.append(group_name)
+            else:
+                included_groups.append(group_name)
+        
+        policy_data.append({
+            'Policy Name': dc.get('displayName') or dc.get('name'),
+            'Description': dc.get('description'),
+            'Included Groups': ', '.join(included_groups),
+            'Excluded Groups': ', '.join(excluded_groups)
+        })
 
     df = pd.DataFrame(policy_data)
     df.to_csv('intune_deviceConfigPolicies.csv', index=False)
