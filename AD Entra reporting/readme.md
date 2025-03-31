@@ -24,7 +24,7 @@ i found this from: https://github.com/pypa/pip/issues/5363 -- and it allowed me 
 
 *(Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1045)'))': /simple/pip/)*
 
-# **Admin Roles Report
+# **Admin Roles Report**
 
 due to MSOL/AAD deprecation (https://techcommunity.microsoft.com/blog/microsoft-entra-blog/important-update-deprecation-of-azure-ad-powershell-and-msonline-powershell-modu/4094536) I am working to migrate a lot of my current company's e-mail reports to graph powershell sdk supported modules, since they were all built initially on MSOL/AAD.
 
