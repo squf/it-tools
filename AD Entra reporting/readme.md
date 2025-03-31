@@ -23,3 +23,11 @@ i found this from: https://github.com/pypa/pip/issues/5363 -- and it allowed me 
 *the error i was receiving, in case you want to confirm you're getting the same error:* 
 
 *(Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1045)'))': /simple/pip/)*
+
+# **Admin Roles Report
+
+due to MSOL/AAD deprecation (https://techcommunity.microsoft.com/blog/microsoft-entra-blog/important-update-deprecation-of-azure-ad-powershell-and-msonline-powershell-modu/4094536) I am working to migrate a lot of my current company's e-mail reports to graph powershell sdk supported modules, since they were all built initially on MSOL/AAD.
+
+this reporting also requires setting up an Azure Key Vault and storing SMTP authentication information in there, then passing that into this script for smtp authentication purposes
+
+this script and others like it are designed to be run from task scheduler on a dedicated VM, so the e-mail reporting just runs on a task and not manually, since the new modules require to be run in powershell7 from what i've seen this requires specifying the correct version of powershell in the scheduled task: Start Program: "C:\Program Files\PowerShell\7\pwsh.exe"
