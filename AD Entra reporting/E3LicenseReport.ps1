@@ -16,7 +16,7 @@ $keyVaultName = "vault-here"
 $smtpServer = "smtp.office365.com"
 $smtpPort = 587
 $smtpUsername = "smtpserviceaccount@domain.com"
-$smtpPasswordSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name "SMTPPassword" -AsPlainText
+$smtpPasswordSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name "azkeyvault-secret-here" -AsPlainText
 $smtpPassword = ConvertTo-SecureString -String $smtpPasswordSecret -AsPlainText -Force
 $smtpCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $smtpUsername, $smtpPassword
 
