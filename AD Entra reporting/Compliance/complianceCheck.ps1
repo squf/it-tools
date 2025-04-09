@@ -3,6 +3,8 @@
 
 $AllWindowsDevices            = Get-MgBetaDeviceManagementManagedDevice -Filter "OperatingSystem eq 'Windows'" -All 
 $AllWindowsCompliancySettings = Get-MgBetaDeviceManagementDeviceCompliancePolicySettingStateSummary | Where-Object { $_.PlatformType -like "*windows10*" -or $_.PlatformType -like "All" }
+$scriptName = [System.IO.Path]::GetFileNameWithoutExtension($MyInvocation.MyCommand.Name)
+$csvPath = Join-Path -Path $PSScriptRoot -ChildPath "$scriptName.csv"
 
 $Export = Foreach ($setting in $AllWindowsCompliancySettings) {
                 
@@ -32,4 +34,4 @@ $CompleteExport = Foreach ($Device in $Export) {
     }                
 }
 
-$CompleteExport 
+$CompleteExport | Export-Csv -Path $csvPath -NoTypeInformation
