@@ -6,7 +6,7 @@ grabs all AD computer objects in domain and exports .csv to "C:\reports" directo
 
 you can export your Entra computers from entra.microsoft.com, and save them as "Entra_computers.csv" to the same "C:\reports" directory
 
-once you have both reports in one location, the python script will use pandas and xlsxwriter libraries (dependencies in this case), and output a cleaned up report which shows mismatches between the two
+once you have both reports in one location, the python script will use pandas and xlsxwriter libraries and output a cleaned up report which shows mismatches between the two
 
 this is useful only in HAADJ environments where you are using Entra Connect to move all your domain devices into Entra, this report is meant to highlight devices which are missing in Entra (maybe you are excluding servers or VMs or something, or maybe you want to check that the Entra sync is working correctly in other ways)
 
