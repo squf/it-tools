@@ -29,6 +29,8 @@ Now my ideal solution would of course be that we move to fully AADJ environment,
 
 * I found a script somewhere online that does the same thing but works with MgGraph, I cannot remember WHERE I found this and its not in my History in any browser so oops sorry. I will post the script here as a separate file but just know that I didn't write it and I can't properly attribute it because I don't remember and can't find where I stole it from.
 
+* edit: I've uploaded the script for this here: [click](https://github.com/squf/it-tools/blob/main/Graph/scripts/Azure-Add-PermissionsManagedIdentity.ps1)
+
 * I am trying to run this script to add permissions to my Azure Automation Account to be able to run the runbook which will ultimately set the primary user values for us in Intune. What a long-winded way to go about this. However, I keep running into errors, after troubleshooting and debugging many errors I am running into, I get this one persistent one:
 
 ![Pasted image 20250530145738](https://github.com/user-attachments/assets/1e28b37e-fcab-4b14-8f18-6338ac2ce440)
