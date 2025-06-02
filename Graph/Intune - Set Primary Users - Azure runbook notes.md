@@ -35,14 +35,14 @@ Now my ideal solution would of course be that we move to fully AADJ environment,
 
 ![Pasted image 20250530145738](https://github.com/user-attachments/assets/1e28b37e-fcab-4b14-8f18-6338ac2ce440)
 
-* I spent seriously god knows how long trying to get this resolved but its basically just my fault for not knowing enough about Azure. That's why I made this doc! So basically long story short, I have an ==Enterprise Application== in Entra which has a whole heap of permissions on it to work with Graph API:
+* I spent seriously god knows how long trying to get this resolved but its basically just my fault for not knowing enough about Azure. That's why I made this doc! So basically long story short, I have an Enterprise Application in Entra which has a whole heap of permissions on it to work with Graph API:
 	* ![Pasted image 20250530145845](https://github.com/user-attachments/assets/928e28f7-5338-490e-bbe3-b383d0d0d536)
 
 					  Enterprise App
-* But this ==Enterprise App== is missing some key permissions I know I will need based on T-Bone's script from before, specifically I need:
+* But this Enterprise App is missing some key permissions I know I will need based on T-Bone's script from before, specifically I need:
 	* `"DeviceManagementManagedDevices.Read.All", "DeviceManagementManagedDevices.ReadWrite.All", "AuditLog.Read.All", "User.Read.All"`
-* But as you can see above, in an ==Enterprise App==, there's nowhere for me to add new permissions... I know I've seen an "Add Permissions" button somewhere before but where...
-* I check ==App Registrations== and there's nothing in there associated with my Enterprise App, but just for funsies I check another registered app and sure enough there it is, the beautiful Add Permissions button:
+* But as you can see above, in an Enterprise App, there's nowhere for me to add new permissions... I know I've seen an "Add Permissions" button somewhere before but where...
+* I check App Registrations and there's nothing in there associated with my Enterprise App, but just for funsies I check another registered app and sure enough there it is, the beautiful Add Permissions button:
 	* ![Pasted image 20250530150020](https://github.com/user-attachments/assets/4292a29c-f6b2-40d4-a4db-a82cdc369c0c)
 
 					  App registrations
