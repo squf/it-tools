@@ -12,6 +12,13 @@ Now my ideal solution would of course be that we move to fully AADJ environment,
 
 # How to fix?
 
+---
+
+* You can continue reading the below notes to see the issues I was running into, but I figured out a much simpler solution later on to apply the needed graph permissions without messing anything up
+* Download the intune-set-primaryusers.ps1 file and then just run it in a powershell window manually, it will pop-up with the typical "Grant consent" windows in your browser and then you can approve them and it will get added as needed
+* The cmdlet I ran to make sure it ran in test mode and would spit out a local report to my PC was: `.\Intune-Set-PrimaryUsers.ps1 -Testmode $true -DetailedReport $true -ReportDisk $true -ReportPath "C:\Reports"`
+* THEN you can do the rest of the junk to go about setting up the Azure automation, after doing the above when you run the Azure automation it should work fine
+
 * First, I found this blog post:[Set Intune Primary User with Azure Automation - Mr T-Bone´s Blog](https://www.tbone.se/2025/03/31/set-intune-primary-user-with-azure-automation/)
 * And the associated script is here on GitHub: [Intune/Intune-Set-PrimaryUsers.ps1 at master · Mr-Tbone/Intune](https://github.com/Mr-Tbone/Intune/blob/master/Intune-Set-PrimaryUsers.ps1)
 
