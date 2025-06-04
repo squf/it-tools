@@ -11,4 +11,4 @@ steps i took:
 
 * the script worked perfectly to combine all of the .docx files into one big .docx file which is what i wanted, but i'm going to work on a separate script from here to clean it up and only extract the elements i want
 
- * i'll upload `docCobbler.py` and `docCobblerCleanup.py` separately to this repo - the `docCobbler.py` is the primary script which will combine all .docx files to one big file (edit the path to match your environment!)
+ * i'll upload `docCobbler.py` and `docCobblerMini.py` separately to this repo - the `docCobbler.py` is the primary script which will combine all .docx files to one big file (edit the path to match your environment!)
