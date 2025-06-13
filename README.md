@@ -5,3 +5,7 @@
 - some tools may be very specific to whichever environment i was working at when i made it, some may be more generally useful
 - every environment i have ever been at so far has been HAADJ so if you're a Windows admin you're already groaning just reading that, this repo therefore has a ton of weird wonky stuff to clobber on-prem stuff together for use with cloud stuff
 - you can in fact build an entire career out of helping orgs transition from HAADJ to AADJ!
+
+# docs
+
+- i recently added a docs repo here to store documentation on a wide variety of topics i encounter, these will just be markdown files for reading and not scripts per se 
