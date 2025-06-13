@@ -83,6 +83,8 @@
 
 * Also reminder to myself, reboot the hosts after making these registry changes to have them take effect. Pretty standard for registry changes but just throwing that out there.
 
+* Oh and uh, one more note, in case we do need to keep TLS 1.0/1.1 on or anything based on testing. What we need to do in that case then is get an exception from the auditors and explain that we can't disable that until a lot of other things happen first to upgrade our Core workflows which are mostly reliant on third-parties anyway. We can mitigate these threats by moving them to an isolated VLAN if necessary. Then within our vulnerability scanning engine we would want to exempt these hosts from checking for this issue as well so we don't keep getting alerts about it.
+
 **TL;DR:**
 
 * Similar to "SMB Signing", can handle via GPO or registry/Powershell. Same issues that apply in that document apply here, i.e., not all of our devices have domain line-of-sight and so we're going to have to use Powershell on them anyway so might as well use it for everything and skip setting up a GPO. We're moving away from GPOs and into Intune/Cloud more broadly anyway, the fewer GPOs the better, leave them in the dust!
