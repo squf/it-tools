@@ -48,3 +48,14 @@ Option 2 is if we want to approach this in a different way to ensure we can mana
 	  Signed : True
 	  
 	* You can also just run `get-smbconnection` to see what is currently using SMB protocol on your host, and pipe `fl` after for a more verbose list. I would include a screenshot here but it has a lot of sensitive info in it, so just run it on your own PC for an idea of what I'm talking about! You'll also see that it reports back any open network shares which is why I said above "When I think of SMB or Samba I think of network shares".
+
+
+**TL;DR:**
+
+* We do not currently have SMB Signing required everywhere, as evidenced by running `get-smbconnection | fl Signed` from an elevated Powershell window. 
+  
+* We can fix this by GPO and/or Registry settings. To target our non-domain devices we will need to use Powershell anyway, so may as well just use Powershell for everything. The GPO just changes the following registry keys:
+  
+* **Workstations:** `HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManWorkstation\Parameters` -> `RequireSecuritySignature = 1`
+  
+* **Servers:** `HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters` -> `RequireSecuritySignature = 1`
