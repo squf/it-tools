@@ -24,7 +24,7 @@
 
 * **verify room list membership**:
 
-	* ```Get-DistributionGroupMember -Identity 'Meeting Rooms' | Select-Object Name, PrimarySmtpAddress
+	* `Get-DistributionGroupMember -Identity 'Meeting Rooms' | Select-Object Name, PrimarySmtpAddress`
 
 * https://www.reddit.com/r/Office365/comments/1cwco23/comment/l4w94h0/
 
