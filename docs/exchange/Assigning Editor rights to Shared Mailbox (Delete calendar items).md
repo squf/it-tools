@@ -15,6 +15,7 @@ I will use "ExampleMailbox@domain.com" as my example here.
 
 * **Verify Editor rights:**
   `Get-MailboxFolderPermission -Identity "ExampleMailbox@domain.com:\Calendar"`
+
   ![image](https://github.com/user-attachments/assets/e12cf394-8613-471d-b6b0-118db36ed8a1)
 
   
