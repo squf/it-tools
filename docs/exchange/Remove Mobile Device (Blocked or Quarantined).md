@@ -108,4 +108,4 @@ Use either the specific cmdlet or list all devices cmdlet to gather the **Identi
 
 * Also in Exchange they are gone
 
-* So in this instance where we had two stuck very old devices (1-2 years+), we would not have received reports of these devices on the e-mail, and also there would have been no other way to remove these devices without using Powershell, so I don't think there's really anything Tier1 could have done in this instance about these devices and hence why the issue got escalated to me and hence this doc I made about how to fix it.
+* So in this instance where we had  stuck very old devices (1-2 years+), we would not have received reports of these devices on the e-mail, and also there would have been no other way to remove these devices without using Powershell, so I don't think there's really anything Tier1 could have done in this instance about these devices and hence why the issue got escalated to me and hence this doc I made about how to fix it.
