@@ -18,9 +18,9 @@
 
 * **verify room list property:**
 
-	* PrimarySmtpAddress                                     : MeetingRooms@domain.com
-		RecipientType                                          : MailUniversalDistributionGroup
-		RecipientTypeDetails                                   : RoomList
+* PrimarySmtpAddress: MeetingRooms@domain.com
+* RecipientType: MailUniversalDistributionGroup
+* **RecipientTypeDetails: RoomList** <- this property is showing up now, so we verified the member was added to the room list
 
 * **verify room list membership**:
 
