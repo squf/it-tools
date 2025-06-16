@@ -85,9 +85,10 @@ Use either the specific cmdlet or list all devices cmdlet to gather the **Identi
 ---
 # What about the rest of the devices?
 
-* On the Quarantine list as shown above, we see 3 other devices stuck in Quarantine, but we don't know the associated users. I had Admin FWD me a copy of the latest Quarantined Devices report that Tier1 receives to see if this information is listed there.
+* We had 3 other devices stuck in Quarantine, but we didn't know the associated users. I had Admin FWD me a copy of the latest Quarantined Devices report that Tier1 receives to see if this information is listed there.
 
 * The Mobile Device list just shows every single mobile device, so I have to do some digging
+
 * This list contains DeviceID value, so, I tried to find all three of their deviceID values, but was unable to for the two older ones -- only found value: 123456ABCD789EFGHIJKB17C1A3E755E for the most recent one, which is:
 	* 123456ABCD789EFGHIJKB17C1A3E755E | iOS XX.X.X | Outlook for iOS and Android | Outlook-iOS/2.0 | First Lastname | FirstL@domain.com
 	* The two older ones show: 
