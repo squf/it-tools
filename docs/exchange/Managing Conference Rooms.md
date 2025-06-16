@@ -16,8 +16,6 @@
 
 	* `Add-DistributionGroupMember -Identity 'Meeting Rooms' -Member MeetingRoom1@domain.com`
 
-	* `Add-DistributionGroupMember -Identity 'Meeting Rooms' -Member MeetingRoom1@domain.com`
-
 * **verify room list property:**
 
 	* PrimarySmtpAddress                                     : MeetingRooms@domain.com
