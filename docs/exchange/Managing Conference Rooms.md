@@ -8,9 +8,9 @@
 
 	* `New-Distributiongroup -Name 'Meeting Rooms' -RoomList`
 
-		Name          DisplayName   GroupType PrimarySmtpAddress
+		Name |         DisplayName  | GroupType | PrimarySmtpAddress
     ----          -----------   --------- ------------------
-		Meeting Rooms Meeting Rooms Universal MeetingRooms@domain.com
+		Meeting Rooms | Meeting Rooms | Universal | MeetingRooms@domain.com
 
 * **add members to room list:**
 
