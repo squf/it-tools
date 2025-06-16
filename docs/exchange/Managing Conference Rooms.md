@@ -58,7 +58,7 @@
 
 script to add all rooms to the new room list:
 
-``````
+```
 $emailAddresses = @(
     "MeetingRoom1@domain.com",
     "MeetingRoom2@domain.com",
@@ -69,5 +69,4 @@ $emailAddresses = @(
 foreach ($email in $emailAddresses) {
     Add-DistributionGroupMember -Identity 'Meeting Rooms' -Member $email
 }
-```
 ```
