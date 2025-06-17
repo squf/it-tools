@@ -34,3 +34,7 @@ a.	Purview licensing requires E5, this does not come with Entra P2.
 **Staying E3 and purchase Entra P2 addon**
 
 * If we went this route we would not have access to DLP and Purview and other features in E5 such as Defender for Endpoint, Defender for O365 (ATP, URL Sandboxing + attachment sandboxing), Defender for Cloud Apps, advanced compliance reporting/eDiscovery, insider risk management. 
+
+---
+
+* Additional note: Entra SSPR currently does not support DUO EAM [DUO Doc](https://help.duo.com/s/article/6218?language=en_US) but MS might be adding support for it in the future? It's unclear to me at this time. I found this [blog post](https://janbakker.tech/goodbye-legacy-sspr-and-mfa-settings-hello-authentication-methods-policies/) which mentions using a third-party for it but we haven't tested it in our environment yet. I can't find the MS post I'm looking for at this time. Just something to keep in mind if you're in a hybrid AADJ environment using third-party MFA primarily and looking into SSPR.
