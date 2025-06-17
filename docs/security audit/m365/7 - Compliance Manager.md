@@ -6,7 +6,7 @@
 
 1.     Microsoft Purview includes **Data Loss Prevention** (Microsoft Information Protection) which can be augmented by Varonis for deeper classification, Microsoft AD/Entra ID auditing, file exposure, and more.
 
-----
+---
 
 # what it is
 
@@ -16,9 +16,9 @@
 
 * That being said, I cannot find anywhere where Purview supports (One Of Our Industry Standard Compliance Frameworks) out-of-box, but, Varonis appears to support it.
 
-* ---
+---
 
-* # final notes / these were internal and sent to leadership, but some ideas here would apply to other environments as well
+# final notes / these were internal and sent to leadership, but some ideas here would apply to other environments as well
 
 * My team will have to, and can, manage standing these up to begin with and managing them for a time, but Purview/Varonis are really more "Security" focused concerns, so if our company ever ends up with a dedicated Security team in the future -- we would want to transition the day-to-day management of these platforms to them. I'm just saying!
 
@@ -30,6 +30,6 @@
 
 * I think it would be wise to have at least a few hours of talks / trainings / demos, some tips & guidelines etc., from Resultant and/or Varonis (if we're purchasing Varonis, I'm just assuming it would be a good idea to go with Varonis as it covers a wider range of products, frameworks, and offers automated remediation tooling) for our department, just so we're not completely winging it with Google & Reddit searches -- only because the compliance piece is a little more important than a lot of the other IT work we do. Like its okay if I mess up installing an app, I can uninstall it later. It's okay if I mess up setting up a server, I can delete it and remake it correctly. If I mess up compliance and we get sued and eat a huge fine or something well that's not quite as harmless yeah.
 
-*  ---
+---
 
 *  I also noted that most of Purview's functionality is (as of the time of this writing) locked behind E5 licensing, which we do not have. So we're going to need to tack on a 6-figure+ annual budget increase to move to E5 licensing. Varonis is also $$$ expensive.
