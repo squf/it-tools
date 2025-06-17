@@ -62,7 +62,7 @@
 
 # additional security settings
 
-* Also recommended to turn off "**allow user consent**", which I agree should be turned off. Users should not be allowed to grant Graph API consent to any applications, this should be strictly managed through the global admins. If there is ever a business need to allow API consent it should be handled through an ticket to IT Dept and a global admin will resolve it, like we do currently with all of our SSO app registrations.
+* Also recommended to turn off "**allow user consent**", which I agree should be turned off. Users should not be allowed to grant Graph API consent to any applications, this should be strictly managed through the global admins. If there is ever a business need to allow API consent it should be handled through a ticket to IT Dept and a global admin will resolve it, like we do currently with all of our SSO app registrations.
 
 ---
 
