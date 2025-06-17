@@ -3,7 +3,7 @@
 # Named locations - Trusted Countries
 
 * Our first recommendation was to set-up Trusted Countries in Entra, which some of the below CAP's will rely on later. We were already leveraging Trusted Locations for other settings like Network, but we didn't have anything for geolocation prior to the audit.
-* This seems like an obvious "yes" to me, we should enable this. I don't think IMCU does any business outside of these Continental United States (God bless America) 🎆⚾🌭🦅🍔(These colors don't run)
+* This seems like an obvious "yes" to me, we should enable this. I don't think CompanyName does any business outside of these Continental United States (God bless America) 🎆⚾🌭🦅🍔(These colors don't run)
 * One thing to note is, as we've already seen in the past, we get a lot of log-in attempts from all over the world -- to my understanding, turning this on won't stop those attempts from showing up in our sign-in logs, but it would at least prevent any ability for those geo-locations outside the US from ever accessing our data even if they successfully phished a password, they would have to spoof their geo-location as well in order to even have a chance to do anything nefarious. Plus it should have zero impact on our daily operations. Just another hurdle in the way for foreign threat actors to have to go over with minimal to no impact on us, should be good.
 * Having this trusted location set-up is a requirement for CA02 below as well.
 
