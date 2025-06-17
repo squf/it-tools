@@ -23,7 +23,7 @@ $allIPAddresses = $allIPAddresses | ForEach-Object { $_.Trim() } | Sort-Object -
 $currentTrusted = (Get-Item WSMan:\localhost\Client\TrustedHosts).Value -split ',' | ForEach-Object { $_.Trim() }
 $combined = ($currentTrusted + $allIPAddresses) | Where-Object { $_ -ne "" } | Sort-Object -Unique
 
-# chunking IP addresses into batches to stay under the 10239 character limit for XML tomfoolery
+# chunking IP addresses into batches to stay under the 10239 character limit, set-item will apparently just silently fail if it exceeds this length limit and i didn't know about that until now??? ok
 # my "hosts.csv" contained over 1,500 IP addresses I wanted to run remote pwsh cmdlets to, which exceeds the limit i can update TrustedHosts with at one time, so it needs to be batched out into chunks
 $trustedString = ""
 $batch = @()
