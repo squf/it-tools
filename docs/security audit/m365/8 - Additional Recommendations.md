@@ -6,11 +6,14 @@
 2.	Purchase Entra ID P2 Licensing addon or replace current E3 licenses with M365 E5 (P2 is bundled with M365 E5 Licensing) for Risk-based Conditional Access rules and ID Governance (automated ID workflows).
 
 a.	Privileged Identity Management – Like AppLocker but better
+
 b.	Risk Based Conditional Access
+
 c.	Vulnerabilities and risky account detection
 
 3.	Microsoft Purview includes Data Loss Prevention (Microsoft Information Protection) which can be augmented by Varonis for deeper classification, Microsoft AD/Entra ID auditing, file exposure, and more.
-a.	Purview licensing requires E5, this does not come with Entra P2, allegedly. 
+
+a.	Purview licensing requires E5, this does not come with Entra P2.
 
 **Impact:**
 
