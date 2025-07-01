@@ -39,14 +39,14 @@ $certThumbprint = if ($CertificateThumbprint) { $CertificateThumbprint } else { 
 
   ![image](https://github.com/user-attachments/assets/01639737-4bb5-4f04-955b-6cec748be9fb)
 
-* This is from this line in the script: 
+* This is from these lines in the script: 
 
 ```
-                # Ask if user wants to open the report
-                $openReport = Read-Host "Would you like to open the report now? (y/n)"
-                if ($openReport -eq 'y') {
-                    Start-Process $filePath
-                }
+# Ask if user wants to open the report
+$openReport = Read-Host "Would you like to open the report now? (y/n)"
+	if ($openReport -eq 'y') {
+	Start-Process $filePath
+}
 ```
 
 * For a simple fix, I tried just commenting all of these lines out and re-running the script. 
