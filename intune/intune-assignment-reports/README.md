@@ -33,7 +33,7 @@ $certThumbprint = if ($CertificateThumbprint) { $CertificateThumbprint } else { 
 
 * I wanted to make the report go to a different directory, this script outputs it to: `$filePath = Join-Path (Get-Location) "IntuneAssignmentReport.html"` so the same directory as the script itself. We have a specific directory we store all our generated reports in on this server, so I changed that line in the script to point there instead -> `$filePath = "C:\Reports\IntuneAssignmentReport.html"` - just static assignment for this $filePath variable, simple enough.
 
-* I know already that this script only works in PWSH7 and not the 5.1 IDE on the server, but luckily I also have PWSH7 and Windows Terminal set-up there for just such an occassion. I just ran the script from there as-is after making my edits, with `.\IntuneAssignmentChecker_v3.ps1 - GenerateHTMLReport`
+* I know already that this script only works in PWSH7 and not the 5.1 IDE on the server, but luckily I also have PWSH7 and Windows Terminal set-up there for just such an occassion. I just ran the script from there as-is after making my edits, with `.\IntuneAssignmentChecker_v3.ps1 -GenerateHTMLReport`
 
 * It did run successfully as expected, but the terminal window is hanging open with this check:
 
