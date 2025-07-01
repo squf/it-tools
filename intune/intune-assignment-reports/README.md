@@ -60,7 +60,7 @@ $openReport = Read-Host "Would you like to open the report now? (y/n)"
 	* Set-up a separate script which will grab this .html file, attach it and send it as an e-mail to our Systems team for review, run this on a scheduled task let's say 6:00 AM biweekly
 	* This should give the first script plenty of time to run through and grab a fresh copy to send off, and the email should arrive to our shared inbox before any of us gets to work in the morning
 
-* I have already several other scripts which will do the "grab this file, attach it, send as email" on the server, but unfortunately I can't share them here on GitHub because they include sensitive data for our environment, but basically long story short they are also using the AppID authentication information, an Azure Key Vault to pass SMTP values, and the deprecated `Send-MailMessage` cmdlet because I haven't figured out a way yet to use any different cmdlets for sending SMTP.
+* I have already several other scripts which will do the "grab this file, attach it, send as email" on the server, but unfortunately I can't share them here on GitHub because they include sensitive data for our environment, but basically long story short they are also using an AppID / thumbprint for authentication, an Azure Key Vault to pass SMTP authentication, and the deprecated `Send-MailMessage` cmdlet because I haven't figured out a way yet to use any different cmdlets for sending SMTP.
 
 * I set-up a specific one called `send-mail.ps1` and stored it in the same directory the AssignmentChecker script lives in, then I tested this via terminal and verified I received the e-mail with the .html file attached as expected
 
