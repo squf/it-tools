@@ -6,16 +6,9 @@
 * Then I spent a few hours really deep diving into everything Firefox could possibly be doing, i.e., why was it persistently showing up in my Discovered Apps list in Intune?
 * Based on that research, I found the following things to check for, which these scripts cover:
 
-- Helper.exe uninstall cmd
-- WMI uninstall cmd
-- Registry cleanup for Software\Mozilla keys
-- Registry cleanup for Windows\...\Uninstall keys
-- Scheduled Task cleanup
-- User data cleanup in all AppData directories
-- Stops MozillaMaintenance service if it is running, then deletes it silently
-- Removes all MozillaMaintenance folders and regkeys if found
-- Intune inventory cache cleanup in IME registry path
-- Force IME refresh to push updated app info back to Intune for faster reporting updates
-- Outputs .log to -> C:\tmp\FirefoxUninstall.log - for tracking (does not append,  just overwrites to avoid .log bloat - creates c:\tmp if it doesn't exist, etc.)
+- Recursively looking everywhere for anything Firefox related, nuking from orbit
+- 2 sets of scripts, one to run in User context (be sure to set this to "User context" when setting it up in Intune) -- and the other to run in System context to clean up after
+- Some apps get installed under sys/user context and it differs depending on a lot of factors (how were they installed to begin with?) -- so based on that, I just came up with 2 sets of scripts, and just nuke both. ezpz.
+- Have to clean up registry entries and ensure all four of these places: `HKCU & HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall` and `HKCU & HKLM:\Software\Mozilla` get recursively force deleted, vulnerability scanners and Intune check these places to determine whether something is installed or not
 
-* So that's why this is here, even if you have no need to remove Firefox via Intune, these types of bullet points might be useful things to keep in mind for the future when dealing with other apps you want to strip completely out of your environment. Basically just keep in mind that an app is going to leave behind way more data in way more places than you might initially expect.
+* So that's why this is here, even if you don't need to remove Firefox specifically via Intune, these types of bullet points might be useful things to keep in mind for the future when dealing with other apps you want to strip completely out of your environment. Basically just keep in mind that an app is going to leave behind way more data in way more places than you might initially expect, and always keep USER vs SYSTEM context in mind for handling uninstalls (the easiest way to be sure if you're not sure is to just run both context uninstallers)
