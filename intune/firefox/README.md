@@ -8,6 +8,7 @@
 
 - Recursively looking everywhere for anything Firefox related, nuking from orbit
 - 2 sets of scripts, one to run in User context (be sure to set this to "User context" when setting it up in Intune) -- and the other to run in System context to clean up after
+- Firefox can also (found this on some of our PC's, not on others) set-up a Mozilla Maintenance Service, which is how it keeps itself automatically updated without UAC prompts. Find and remove this service and all associated folders/data/regkeys as well.
 - Some apps get installed under sys/user context and it differs depending on a lot of factors (how were they installed to begin with?) -- so based on that, I just came up with 2 sets of scripts, and just nuke both. ezpz.
 - Have to clean up registry entries and ensure all four of these places: `HKCU & HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall` and `HKCU & HKLM:\Software\Mozilla` get recursively force deleted, vulnerability scanners and Intune check these places to determine whether something is installed or not
 
