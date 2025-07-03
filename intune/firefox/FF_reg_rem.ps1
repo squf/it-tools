@@ -17,7 +17,11 @@ Set-Content -Path $registryLog -Value "Firefox Registry Cleanup Log - $(Get-Date
 $registryPaths = @(
     "HKLM:\SOFTWARE\Mozilla",
     "HKLM:\SOFTWARE\mozilla.org",
-    "HKLM:\SOFTWARE\MozillaPlugins"
+    "HKLM:\SOFTWARE\MozillaPlugins",
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MozillaMaintenanceService",
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Mozilla",
+    "HKLM:\SOFTWARE\WOW6432Node\Mozilla",
+    "HKLM:\SOFTWARE\WOW6432Node\MozillaPlugins"
 )
 
 $allDeleted = $true
