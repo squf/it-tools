@@ -13,3 +13,9 @@
 - Have to clean up registry entries and ensure all four of these places: `HKCU & HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall` and `HKCU & HKLM:\Software\Mozilla` get recursively force deleted, vulnerability scanners and Intune check these places to determine whether something is installed or not
 
 * So that's why this is here, even if you don't need to remove Firefox specifically via Intune, these types of bullet points might be useful things to keep in mind for the future when dealing with other apps you want to strip completely out of your environment. Basically just keep in mind that an app is going to leave behind way more data in way more places than you might initially expect, and always keep USER vs SYSTEM context in mind for handling uninstalls (the easiest way to be sure if you're not sure is to just run both context uninstallers)
+
+* I've found that removing Firefox from Intune remediations is a **massive pain** so I ended up with 3 separate remediations for this
+* The "FF_helper" detection & remediation scripts should actually process the uninstall for Firefox if its present, this is under `...\uninstall\helper.exe` in Program Files folders on a given PC with Firefox installed
+* Running this file should remove Firefox from a PC
+* The other files in here will nuke out registry / scheduled tasks / services / other things, in case helper doesn't catch those things (its supposed to)
+* So I would recommend if you want to just use these scripts directly in your environment, start with the **FF_helper** scripts in 1 remediation, let it run for a day or so on your target devices, and then if that's not fully clearing it out you can move to the other bundles of scripts (which need to be set up as two separate remediations, one for User context and one for System context)
