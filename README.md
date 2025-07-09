@@ -13,7 +13,7 @@
 
 # links & shoutouts
 
-*my most used links
+*my most used links*
 
 - [Intune Automation](https://www.intuneautomation.com/) - one of Ugur Koc's websites, extremely useful and professional Powershell scripts to use in your environment
 - [Ugur's GitHub](https://github.com/ugurkocde) - additional very helpful resources provided for free by Ugur
