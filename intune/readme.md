@@ -1,3 +1,3 @@
 # intune tools
 
-various scripts for intune
+various tools & notes for intune
