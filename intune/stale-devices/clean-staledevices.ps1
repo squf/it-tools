@@ -1,6 +1,6 @@
 # squf's stale device clean-up script, designed to work as an Azure Runbook or scheduled task / other automated fashion
 # test it with the -WhatIf parameter first to ensure its working as expected before you set it up for automated running
-# works with a registered Entra Enterprise App that uses a CertThumbprint, so if you're using client secrets or some other way of doing app authentication you'd need to adjust the Connect-MgGraph parameters and their preceding variables
+# works with a registered Entra Enterprise App that uses a CertThumbprint, so if you're using client secrets or some other way of doing app authentication you'd need to adjust the Connect-MgGraph portion on line 17
 # this requires the app you're using for authentication to have the "DeviceManagementManagedDevices.ReadWrite.All" & "Directory.Read.All" permissions to work
 
 param(
