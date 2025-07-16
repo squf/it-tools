@@ -21,7 +21,10 @@
 
 **I spent about 2 afternoons troubleshooting all this to get it working**
 
-* As I am writing this readme, I am uploading all of my one test user's home folder contents to their OneDrive but I don't think its fully successful yet, I am not sure its actually recursively adding files to subfolders correctly at this time
+* As I am writing this readme, I am uploading all of my one test user's home folder contents to their OneDrive but I don't think its fully successful yet, I am not sure its actually recursively adding files to subfolders correctly at this time (lol!!!!)
+* I will be updating `ODHF.ps1` as a result if I continue tweaking it or getting it working better, so since nobody ever reads anything on my GitHub anyway I wouldn't worry about it too much. I will specify in the .ps1 file whether it's been updated to handle these cases or not later.
+* I will basically try just approaching my management after this to get them to speed up their decision to purchase ShareGate based on what I've found trying to do this The Hard Way. We're already like 80% of the way to buying ShareGate and did a demo call with them already I just need to push them over the finish line y'know?
+* So if that ends up happening, I will probably move everything in this repo to a subfolder for historical purposes, and then just put my ShareGate scripts here instead, but that's future me's problem
 * I'd like to adjust my current script for this to include recursion and also skipping files completely if they already exist in the target destination to try and save time, since I'm capped at this 1 hour token access I'll probably need to run this same script multiple times to get everything moved over
 * Also, really ideally, I'd rather we just purchase ShareGate and use their Powershell module for this because it is backed by an entire company and is much more up-to-date, so I am much more confident their solution works better, but that's another story
 
