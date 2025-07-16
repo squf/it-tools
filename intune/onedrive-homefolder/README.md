@@ -16,6 +16,8 @@
 * The way this script is supposed to function is that it fetches an access-token via Graph API and stashes it in the `$Auth` variable, so you can use it in other scripts
 * The limitations with this are that the access token only lasts for 1 hour and you have to do it all within the same shell, if you open a new tab or go to a different shell then you won't have the token anymore (which you can check at any time by just typing `$Auth` in shell and seeing if the variable returns anything)
 * So this is already not very ideal, I would much prefer we just use CertThumbprint authentication or something -- something which doesn't expire after 1 hour, and something that is not using delegated permissions
+* I use Marcel's custom cmdlets from his module wherever possible, but in some cases I had to just construct and pass my own Graph API calls directly, like for setting the UploadURL and passing an `Invoke-RestMethod` call, this is in an `else` switch as a fallback in case his fails
+* This is because I was running into issues just trying to pass the direct OneDrive URL, so I switched over to using the Graph API and site ID / drive ID paths, which get gathered in my script and passed into later things. don't worry about it
 
 **I spent about 2 afternoons troubleshooting all this to get it working**
 
