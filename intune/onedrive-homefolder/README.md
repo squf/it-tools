@@ -23,10 +23,8 @@
 
 * As I am writing this readme, I am uploading all of my one test user's home folder contents to their OneDrive but I don't think its fully successful yet, I am not sure its actually recursively adding files to subfolders correctly at this time (lol!!!!)
 * I will be updating `ODHF.ps1` as a result if I continue tweaking it or getting it working better, so since nobody ever reads anything on my GitHub anyway I wouldn't worry about it too much. I will specify in the .ps1 file whether it's been updated to handle these cases or not later.
-* I will basically try just approaching my management after this to get them to speed up their decision to purchase ShareGate based on what I've found trying to do this The Hard Way. We're already like 80% of the way to buying ShareGate and did a demo call with them already I just need to push them over the finish line y'know?
-* So if that ends up happening, I will probably move everything in this repo to a subfolder for historical purposes, and then just put my ShareGate scripts here instead, but that's future me's problem
-* I'd like to adjust my current script for this to include recursion and also skipping files completely if they already exist in the target destination to try and save time, since I'm capped at this 1 hour token access I'll probably need to run this same script multiple times to get everything moved over
-* Also, really ideally, I'd rather we just purchase ShareGate and use their Powershell module for this because it is backed by an entire company and is much more up-to-date, so I am much more confident their solution works better, but that's another story
+* **Later update:** i did actually get a better version of this script working now that I'm pretty happy with, updated `ODHF.ps1` file with the new version already
+* I will probably need to work on an entirely different script to handle provisioning user OneDrive's, which I already know has about a 24-hour lead time on it (i.e., I'll provision them all on Monday and then come back and do the file transfer on like Wednesday or smth) -- I'll add this script later as/when needed.
 
 # Registered app setup
 
@@ -61,6 +59,8 @@
 * This is the primary script which actually does the checking of parent and child directories, and begins copying the files over
 * You need to run `get-token.ps1` before running this, this gives you 1 hour of token access, so if you don't finish the full Home folder transfer in that time glhf!!!! run them both again!!!!
 * I hate this script, hate HAADJ, hate not having ShareGate. Simple as!
+* Actually I was able to get a pretty decent version of this working now which I'm quite happy with so I no longer hate this script. Still hate HAADJ :)
+* This final version, which is updated in this repo already don't worry about it, also includes logging to a .txt file at -> `C:\tmp\ODHF_Logs` and the log itself is also named after the first input you provide the script, so the username value. This makes tracking the file uploads ezpz because each log will be uniquely named and match the user in question, which is pretty neat.
 
 **get-token.ps1**
 * As mentioned above, this just grabs a 1 hour access token for you to use with the primary script and stores it in $Auth variable
