@@ -15,6 +15,10 @@ $remoteUserId = $username.ToLower() -replace '[^a-z0-9]', ''
 $remoteFolder = "Home Folder"
 $remotePath = "$remoteFolder"
 
+# oh yeah another thing i forgot to mention lol, this whole piece here assumes your user's home folders are just named after their SAMAccountNames in AD, which is pretty standard practice
+# but if your company named everyones Home Folders something else or if you're having UPN problems, none of this is gonna work for you
+# in my case I can just accept the username prompt at first and construct both the Home Folder path and the eventual OneDrive URL path later on since they are the same value (!)
+# e.g., \\server\homefolder\FirstnameL -> https://company-my.sharepoint.com/personal/FirstnameL_company_com <- these are the same username / SAMAccountName values, so its ezpz for me (!)
 Write-Host "`n🧾 Summary:"
 Write-Host "📁 Local path: $localPath"
 Write-Host "📂 OneDrive target folder: $remotePath"
