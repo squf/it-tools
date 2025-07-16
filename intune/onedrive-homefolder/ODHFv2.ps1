@@ -1,9 +1,9 @@
 # This is the final / updated version of the script I built, this one works a lot better than previous iterations and avoids messy emtpy nested folder issues etc., and added logging to this version!
-# Prompt for username
 # I need to mention here that this ENTIRE THING only works because our Home Folders are named directly after our users, so their SAMAccountName in AD matches what their personal OneDrive URL will be
 # e.g., \\homefolder\dir\FirstnameL -> will be equal to -> https://company-my.sharepoint.com/personal/FirstnameL_company_com <- which is how this entire thing works
 # the very first line of this script prompts you to enter this SAMAccountName value first, which kicks off the entire rest of the thing
-# so if your environment has mismatched UPN issues, or you don't name your Home Folders after your users SAMAccountName attributes, or anything else, this script is entirely useless for you! Enjoy
+# so if your environment has mismatched UPN issues, or you don't name your Home Folders after your users SAMAccountName attributes, or anything else, this script is entirely useless for you!
+
 $username = Read-Host "Enter the username (e.g., FirstnameL)"
 
 # === LOGGING SETUP ===
