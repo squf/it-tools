@@ -69,3 +69,7 @@
 **get-authaud.ps1**
 * This was a troubleshooting script I made to verify my roles and scopes and suchlike for the token, hopefully you don't have to get this deep into the weeds like I did
 * If you find yourself running this script you should probably just immediately go to your mgmt and beg for ShareGate at this point tbh
+
+**check-od.ps1**
+* just a small helper file I came up with to check the contents of a specified user's OneDrive\Home Folder -- just for a final verification if you want to run it, to ensure the files got copied over
+* in initial testing I'm just doing all of this to my own OneDrive folder so its no big deal I can just look at my own OneDrive whenever in many places, but, it might be more of a pain to check other people's OneDrive's later when I start migrating all of them
