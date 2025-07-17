@@ -54,8 +54,6 @@
 # Scripts readme
 
 **ODHF.ps1**
-* run `get-token.ps1` first to grab token
-
 * This is the primary script which actually does the checking of parent and child directories, and begins copying the files over
 * You need to run `get-token.ps1` before running this, which stores the `access_token` you need to connect your app to Graph API into the `$Auth` variable in your shell.
 * So this script needs to be run after running that script and you need to stay in the same shell context the entire time this script is running.
