@@ -26,6 +26,7 @@
 * I will be updating `ODHF.ps1` as a result if I continue tweaking it or getting it working better, so since nobody ever reads anything on my GitHub anyway I wouldn't worry about it too much. I will specify in the .ps1 file whether it's been updated to handle these cases or not later.
 * **Later update:** i did actually get a better version of this script working now that I'm pretty happy with, updated `ODHF.ps1` file with the new version already
 * I will probably need to work on an entirely different script to handle provisioning user OneDrive's, which I already know has about a 24-hour lead time on it (i.e., I'll provision them all on Monday and then come back and do the file transfer on like Wednesday or smth) -- I'll add this script later as/when needed.
+* If you're getting [HTTP 401 errors](https://learn.microsoft.com/en-us/troubleshoot/sharepoint/lists-and-libraries/401-error-when-using-graph-api-to-access-data) using any of this, check if you have a geolocation conditional access policy and exclude yourself from it if so. I ran into this running this script and after excluding myself it was fine.
 
 # Registered app setup
 
