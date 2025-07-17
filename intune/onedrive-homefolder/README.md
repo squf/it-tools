@@ -27,6 +27,8 @@
 * **Later update:** i did actually get a better version of this script working now that I'm pretty happy with, updated `ODHF.ps1` file with the new version already
 * I will probably need to work on an entirely different script to handle provisioning user OneDrive's, which I already know has about a 24-hour lead time on it (i.e., I'll provision them all on Monday and then come back and do the file transfer on like Wednesday or smth) -- I'll add this script later as/when needed.
 * If you're getting [HTTP 401 errors](https://learn.microsoft.com/en-us/troubleshoot/sharepoint/lists-and-libraries/401-error-when-using-graph-api-to-access-data) using any of this, check if you have a geolocation conditional access policy and exclude yourself from it if so. I ran into this running this script and after excluding myself it was fine.
+* Eventually, I actually hit the [Graph API throttle limits](https://learn.microsoft.com/en-us/graph/throttling-limits) while running these scripts so often, so that's a cap of 15,000 API calls per app per tenant. To try and get around this, I registered a second app and made a copy of `get-token.ps1` -> `get-token2.ps1` - and just changed the ClientID and ClientSecret values in that version of the script. This gives me a cap of 30,000 API calls tenant-wide, so I at least have double the amount of API call space, but there's no easy way around these API throttle limits.
+* You would have to set-up [Data Connect](https://learn.microsoft.com/en-us/graph/data-connect-concept-overview) to avoid all API limits but I'm not doing that for this project
 
 # Registered app setup
 
