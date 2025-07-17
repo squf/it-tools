@@ -1,7 +1,10 @@
 # Absolute nightmare
 
 * So this is another one of those funny things you would only ever have to do in a HAADJ environment. I am assuming you have **Windows Terminal** and **PWSH7** installed for all of this.
-* **My honest recommendation is to just purchase ShareGate if you can convince your mgmt to just buy ShareGate. Do whatever you can to purchase ShareGate if you need to accomplish this same task somewhere else. Their tooling probably does this directly via GUI IDK, but even if not, their Powershell module will work way better than this hacky slapped together piece of junk I came up with.**
+* Everything in here is for a very specific task of migrating a user's [Home Directory](https://learn.microsoft.com/en-us/windows/win32/adschema/a-homedirectory) from on-prem server to that user's OneDrive folder.
+* This script will prompt you for a username, it will search everything in the data server UNC path (you have to specify this in the ODHF script) for a matching username value, it will construct their OneDrive URL using that same value, and then it will copy their entire Home Directory from OnPrem to "OneDrive...\Home Folder" for them. So everything gets neatly moved over to OneDrive in one parent folder and doesn't clutter up their entire OneDrive. That's what this entire repo is for.
+
+* **My honest recommendation is to just purchase ShareGate if you can convince your mgmt to budget for this tool instead, but, this repo is free to use and worked as of July 2025 in my environment at least!**
 * Users have mapped Home Folders in AD, which are stored on a data hosting server on-prem, this gets mapped in their *AD attribute > Profile > Home folder > Connect (Drive Letter) To: (UNC path to data server)*
 * We want to migrate all of these users Home folder data over to their OneDrive, but not all OneDrives have been provisioned yet (which can be accomplished by signing in as the user on the OneDrive website)
 * I found [this OneDrive powershell module](https://github.com/MarcelMeurer/PowerShellGallery-OneDrive) but it hasn't been updated in 3 years, but it is free / open to use
