@@ -31,12 +31,14 @@
 * I kept running into tons of issues with my app permissions, so eventually, I just gave it everything it could possibly need and stopped worrying about least-privilege model. Somebody smarter than me could figure this out but whatever.
 * I registered my app and made sure to copy its `Secret Key` off somewhere safe for use in my scripts (you can't view this again after you leave the page the first time you generate it fyi)
 * I gave the app:
+
 * **Microsoft Graph Application Permissions:**
 * Files.ReadWrite.All
 * Sites.Manage.All
 * Sites.ReadWrite.All
 * User.Read (Default) (Delegated)
 * User.Read.All
+
 * **SharePoint Application Permissions:**
 * MyFiles.Read (Delegated)
 * MyFiles.Write (Delegated)
@@ -47,9 +49,7 @@
 * User.Read.All
 * User.ReadWrite.All
 
-* I also gave my standard user account the **SharePoint Administrator** role just because after like 8 hours of staring at VS Code and all this my brain started to hurt and I couldn't keep track of what was being passed via delegated access or application access
-* TBH I probably don't need any of these delegated ones and don't need this role, but whatever
-* When I'm done with all this I will take away this role from my user
+* TBH I probably don't need any of these delegated ones, but whatever, its working and i'm tired of testing
 
 # Scripts readme
 
