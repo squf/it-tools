@@ -57,10 +57,13 @@
 * run `get-token.ps1` first to grab token
 
 * This is the primary script which actually does the checking of parent and child directories, and begins copying the files over
-* You need to run `get-token.ps1` before running this, this gives you 1 hour of token access, so if you don't finish the full Home folder transfer in that time glhf!!!! run them both again!!!!
-* I hate this script, hate HAADJ, hate not having ShareGate. Simple as!
-* Actually I was able to get a pretty decent version of this working now which I'm quite happy with so I no longer hate this script. Still hate HAADJ :)
-* This final version, which is updated in this repo already don't worry about it, also includes logging to a .txt file at -> `C:\tmp\ODHF_Logs` and the log itself is also named after the first input you provide the script, so the username value. This makes tracking the file uploads ezpz because each log will be uniquely named and match the user in question, which is pretty neat.
+* You need to run `get-token.ps1` before running this, which stores the `access_token` you need to connect your app to Graph API into the `$Auth` variable in your shell.
+* So this script needs to be run after running that script and you need to stay in the same shell context the entire time this script is running.
+* Includes logging to a .txt file at -> `C:\tmp\ODHF_Logs` and the log itself is also named after the username value you provide. This makes tracking the file uploads ezpz because each log will be uniquely named and match the user in question, which is pretty neat. This log is appended to so it will track re-runs of the script etc. gracefully.
+* It also now handles HTTP 429 (API throttling) errors gracefully
+* Handles large item uploads with batching (4 MB+)
+* Fixed an issue with empty child / nested folders, now this script is pretty robust and can be stopped and re-run whenever without creating tons of empty nested folders, now it will just skip files if they exist and otherwise put everything into the "Home Folder" that gets created the first time the script is run
+* I've also tested having multiple people run this script simultaneously and it ran without issue, though I can't say what will happen if you max out your API calls. There is API throttle handling in the script but it might not work perfectly, give it a cooldown before trying again I suppose.
 
 **get-token.ps1**
 * As mentioned above, this just grabs a 1 hour access token for you to use with the primary script and stores it in $Auth variable
