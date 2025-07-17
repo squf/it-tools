@@ -22,7 +22,7 @@ function Write-Log {
 }
 
 # Define base local path
-$baseLocalRoot = "\\<YOUR_DATA_SERVER>\<YOUR_HOMEFOLDERS_ROOT>"
+$baseLocalRoot = "\\<YOUR_DATA_SERVER>\<YOUR_HOMEFOLDERS_ROOT>" # THIS LINE NEEDS TO BE UPDATED to work in your environment, point it at the root folder containing all of your user Home Folder data
 $localPath = Join-Path $baseLocalRoot $username
 
 # Validate local folder exists
