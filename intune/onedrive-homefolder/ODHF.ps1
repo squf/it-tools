@@ -101,13 +101,12 @@ function Upload-LargeFile {
         [Parameter(Mandatory = $true)][hashtable]$Headers
     )
 
-    # Attempt to use the OneDrive module's cmdlet first, as requested.
     if (Get-Command 'Add-ODItemLarge' -ErrorAction SilentlyContinue) {
         try {
             Write-Log "Attempting large file upload for '$($FileItem.Name)' using Add-ODItemLarge..."
-            # Note: The -Destination path format might need adjustment depending on the module's requirements.
+
             $destinationPathForCmdlet = "drive:/root:/$($FullRemotePath)"
-            Add-ODItemLarge -Path $FileItem.FullName -Destination $destinationPathForCmdlet -ErrorAction Stop
+            Add-ODItemLarge -Path $FileItem.FullName -Path $destinationPathForCmdlet -ErrorAction Stop
             
             $global:size += $FileItem.Length
             Write-Log "✅ Successfully uploaded large file '$($FileItem.Name)' using Add-ODItemLarge."
