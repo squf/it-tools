@@ -2,11 +2,10 @@
 
 * So this is another one of those funny things you would only ever have to do in a HAADJ environment. I am assuming you have **Windows Terminal** and **PWSH7** installed for all of this.
 * Everything in here is for a very specific task of migrating a user's [Home Directory](https://learn.microsoft.com/en-us/windows/win32/adschema/a-homedirectory) from on-prem server to that user's OneDrive folder.
-* This script will prompt you for a username, it will search everything in the data server UNC path (you have to specify this in the ODHF script) for a matching username value, it will construct their OneDrive URL using that same value, and then it will copy their entire Home Directory from OnPrem to "OneDrive...\Home Folder" for them. So everything gets neatly moved over to OneDrive in one parent folder and doesn't clutter up their entire OneDrive. That's what this entire repo is for.
+* This script will prompt you for a username, it will search everything in the data server UNC path (you have to specify this in the ODHF script) for a matching username value, it will construct their OneDrive URL using that same value, and then it will copy their entire Home Directory from OnPrem to "OneDrive...\Home Folder" for them. So everything gets neatly moved over to OneDrive in one parent folder and doesn't clutter up their entire OneDrive. That's what everything in this folder is for.
 
 * **My honest recommendation is to just purchase ShareGate if you can convince your mgmt to budget for this tool instead, but, this repo is free to use and worked as of July 2025 in my environment at least!**
-* Users have mapped Home Folders in AD, which are stored on a data hosting server on-prem, this gets mapped in their *AD attribute > Profile > Home folder > Connect (Drive Letter) To: (UNC path to data server)*
-* We want to migrate all of these users Home folder data over to their OneDrive, but not all OneDrives have been provisioned yet (which can be accomplished by signing in as the user on the OneDrive website)
+
 * I found [this OneDrive powershell module](https://github.com/MarcelMeurer/PowerShellGallery-OneDrive) but it hasn't been updated in 3 years, but it is free / open to use
 * I also found -> [ShareGate's Powershell module](https://help.sharegate.com/en/articles/10236381-migrate-onedrive-for-business-to-onedrive-for-business-with-powershell) - which I assume works much better but we'd have to purchase ShareGate first
 
@@ -15,7 +14,6 @@
 * Marcel's script uses delegated permissions and the documentation keeps referencing Azure Active Directory (because it hasn't been updated in 3 years)
 * You **will need to register an Entra App for this, and generate a secret key -- copy this secret key out to a notepad file somewhere else for future reference -- you can't view the secret key again after you generate it the first time just a disclaimer**
 * I kind of hinted at it above but never actually stated it, yes you need to install Marcel's OneDrive module as well: `Install-Module -Name OneDrive`
-* When I look through the `.psd1` and `.psm1` source files it is all in Deutsch so I can't read it at all, I could run it through an LLM but whatever
 * The way this script is supposed to function is that it fetches an access-token via Graph API and stashes it in the `$Auth` variable, so you can use it in other scripts
 * The limitations with this are that the access token only lasts for 1 hour and you have to do it all within the same shell, if you open a new tab or go to a different shell then you won't have the token anymore (which you can check at any time by just typing `$Auth` in shell and seeing if the variable returns anything)
 * So this is already not very ideal, I would much prefer we just use CertThumbprint authentication or something -- something which doesn't expire after 1 hour, and something that is not using delegated permissions
