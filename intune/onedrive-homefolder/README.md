@@ -5,6 +5,7 @@
 * This script will prompt you for a username, it will search everything in the data server UNC path (you have to specify this in the ODHF script) for a matching username value, it will construct their OneDrive URL using that same value, and then it will copy their entire Home Directory from OnPrem to "OneDrive...\Home Folder" for them. So everything gets neatly moved over to OneDrive in one parent folder and doesn't clutter up their entire OneDrive. That's what everything in this folder is for.
 
 * **My honest recommendation is to just purchase ShareGate if you can convince your mgmt to budget for this tool instead, but, this repo is free to use and worked as of July 2025 in my environment at least!**
+* [ShareGate article on doing this same exact thing but using their tool and avoiding all hassles](https://help.sharegate.com/en/articles/10236383-import-from-file-share-to-onedrive-for-business-with-powershell)
 
 * I found [this OneDrive powershell module](https://github.com/MarcelMeurer/PowerShellGallery-OneDrive) but it hasn't been updated in 3 years, but it is free / open to use
 * I also found -> [ShareGate's Powershell module](https://help.sharegate.com/en/articles/10236381-migrate-onedrive-for-business-to-onedrive-for-business-with-powershell) - which I assume works much better but we'd have to purchase ShareGate first
