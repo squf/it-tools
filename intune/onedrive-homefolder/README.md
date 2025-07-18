@@ -11,30 +11,22 @@
 
 # Things to consider
 
-* Marcel's script uses delegated permissions and the documentation keeps referencing Azure Active Directory (because it hasn't been updated in 3 years)
 * You **will need to register an Entra App for this, and generate a secret key -- copy this secret key out to a notepad file somewhere else for future reference -- you can't view the secret key again after you generate it the first time just a disclaimer**
-* I kind of hinted at it above but never actually stated it, yes you need to install Marcel's OneDrive module as well: `Install-Module -Name OneDrive`
-* The way this script is supposed to function is that it fetches an access-token via Graph API and stashes it in the `$Auth` variable, so you can use it in other scripts
-* The limitations with this are that the access token only lasts for 1 hour and you have to do it all within the same shell, if you open a new tab or go to a different shell then you won't have the token anymore (which you can check at any time by just typing `$Auth` in shell and seeing if the variable returns anything)
-* So this is already not very ideal, I would much prefer we just use CertThumbprint authentication or something -- something which doesn't expire after 1 hour, and something that is not using delegated permissions
-* I use Marcel's custom cmdlets from his module wherever possible, but in some cases I had to just construct and pass my own Graph API calls directly, like for setting the UploadURL and passing an `Invoke-RestMethod` call, this is in an `else` switch as a fallback in case his fails
-* This is because I was running into issues just trying to pass the direct OneDrive URL, so I switched over to using the Graph API and site ID / drive ID paths, which get gathered in my script and passed into later things. don't worry about it
+* install Marcel's OneDrive module as well: `Install-Module -Name OneDrive`
+* The way this script is supposed to function is that it fetches an access-token via Graph API and stashes it in the `$Auth` variable, so you can use it in other script (which you can check at any time by just typing `$Auth` in shell and seeing if the variable returns anything)
 
-**I spent about 2 afternoons troubleshooting all this to get it working**
+**I spent about 3 afternoons troubleshooting all this to get it working**
 
-* As I am writing this readme, I am uploading all of my one test user's home folder contents to their OneDrive but I don't think its fully successful yet, I am not sure its actually recursively adding files to subfolders correctly at this time (lol!!!!)
-* I will be updating `ODHF.ps1` as a result if I continue tweaking it or getting it working better, so since nobody ever reads anything on my GitHub anyway I wouldn't worry about it too much. I will specify in the .ps1 file whether it's been updated to handle these cases or not later.
-* **Later update:** i did actually get a better version of this script working now that I'm pretty happy with, updated `ODHF.ps1` file with the new version already
-* I will probably need to work on an entirely different script to handle provisioning user OneDrive's, which I already know has about a 24-hour lead time on it (i.e., I'll provision them all on Monday and then come back and do the file transfer on like Wednesday or smth) -- I'll add this script later as/when needed.
+* requires [pre-provisioning user OneDrive](https://learn.microsoft.com/en-us/sharepoint/pre-provision-accounts)
 * If you're getting [HTTP 401 errors](https://learn.microsoft.com/en-us/troubleshoot/sharepoint/lists-and-libraries/401-error-when-using-graph-api-to-access-data) using any of this, check if you have a geolocation conditional access policy and exclude yourself from it if so. I ran into this running this script and after excluding myself it was fine.
 * Eventually, I actually hit the [Graph API throttle limits](https://learn.microsoft.com/en-us/graph/throttling-limits) / [SharePoint & OneDrive limits](https://learn.microsoft.com/en-us/sharepoint/dev/general-development/how-to-avoid-getting-throttled-or-blocked-in-sharepoint-online) while running these scripts so often. To try and get around this since its per app per tenant, I registered a second app and made a copy of `get-token.ps1` -> `get-token2.ps1` - and just changed the ClientID and ClientSecret values in that version of the script. This doubles my cap at least, so I have double the amount of API call space, but there's no easy way around these API throttle limits.
-* You would have to set-up [Data Connect](https://learn.microsoft.com/en-us/graph/data-connect-concept-overview) to avoid all API limits to my understanding, but I'm not even sure if that would work. I mean it certainly wouldn't with the scripts located here as they are still going to make API calls as-is, but like, maybe you could pull all your SharePoint data into Azure / MGDC and then pass info there? Don't know how that all works, that's a complete architecture shift away from what I'm doing here.
-* I think uhhh probably I just need to rework the script a bit more to handle API throttling issues more gracefully so some things like; batch requests, delta queries, maybe take out the existence checks and just overwrite files (?), async headers, stuff like that. Sounds like a pain!
+* I was curious about setting up [Data Connect](https://learn.microsoft.com/en-us/graph/data-connect-concept-overview) to avoid all API limits, but I'm not even sure if that would work. I mean it certainly wouldn't with the scripts located here as they are still going to make API calls as-is, but like, maybe you could pull all your SharePoint data into Azure / MGDC and then pass info there? Don't know how that all works, that's a complete architecture shift away from what I'm doing here.
+* instead I ended up just changing a lot of the script logic i.e., initially i was sending an API call to check every single file / now it just sends 1 API call to gather all files and compares against that (to avoid overwriting / duplicating data), it was sending 1 API call per folder to create it, now it batches 20 folders into 1 API Call and then recursively fills those folders up with their data later, etc., I'm not sure exactly how much all this batching logic has reduced the API usage in pure numbers but its a massive reduction over the initial script versions i came up with so hopefully you'll never hit a 429 error using this as-is
 
 # Registered app setup
 
-* I kept running into tons of issues with my app permissions, so eventually, I just gave it everything it could possibly need and stopped worrying about least-privilege model. Somebody smarter than me could figure this out but whatever.
-* I registered my app and made sure to copy its `Secret Key` off somewhere safe for use in my scripts (you can't view this again after you leave the page the first time you generate it fyi)
+* I kept running into tons of issues with my app permissions, so eventually, I just gave it everything it could possibly need and stopped worrying about least-privilege model
+* I registered my app and made sure to copy its `Secret Key` into my actual `get-token.ps1` script (you can't view this again after you leave the page the first time you generate it fyi)
 * I gave the app:
 
 * **Microsoft Graph Application Permissions:**
@@ -54,23 +46,25 @@
 * User.Read.All
 * User.ReadWrite.All
 
-* TBH I probably don't need any of these delegated ones, but whatever, its working and i'm tired of testing
+* TBH I probably don't need any of these delegated ones, but whatever, its working and i'm tired and sleepy 😴
 
 # Scripts readme
 
 **ODHF.ps1**
-* This is the primary script which actually does the checking of parent and child directories, and begins copying the files over
-* You need to run `get-token.ps1` before running this, which stores the `access_token` you need to connect your app to Graph API into the `$Auth` variable in your shell.
-* So this script needs to be run after running that script and you need to stay in the same shell context the entire time this script is running.
+* This is the primary script which actually does the checking of parent and child directories, and copies the files over to OneDrive. it stands for OneDriveHomeFolder btw.
+* You need to run `get-token.ps1` before running this, which stores the `access_token` you need for authentication into the `$Auth` variable in your shell.
+* So this script needs to be run **after** running that script and you need to stay in the same shell context the entire time this script is running.
 * Includes logging to a .txt file at -> `C:\tmp\ODHF_Logs` and the log itself is also named after the username value you provide. This makes tracking the file uploads ezpz because each log will be uniquely named and match the user in question, which is pretty neat. This log is appended to so it will track re-runs of the script etc. gracefully.
 * It also now handles HTTP 429 (API throttling) errors gracefully
 * Handles large item uploads with batching (4 MB+)
 * Fixed an issue with empty child / nested folders, now this script is pretty robust and can be stopped and re-run whenever without creating tons of empty nested folders, now it will just skip files if they exist and otherwise put everything into the "Home Folder" that gets created the first time the script is run
-* I've also tested having multiple people run this script simultaneously and it ran without issue, though I can't say what will happen if you max out your API calls. There is API throttle handling in the script but it might not work perfectly, give it a cooldown before trying again I suppose.
+* I've also tested having multiple people run this script simultaneously (as well as running it in multiple tabs of windows terminal) and it ran without issue, though I can't say what will happen if you max out your API calls. There is API throttle handling in the script but it might not work perfectly, give it a cooldown before trying again I suppose.
 
 **get-token.ps1**
 * As mentioned above, this just grabs a 1 hour access token for you to use with the primary script and stores it in $Auth variable
 * You can run this script and then immediately run `$Auth` in your shell after to verify its working
+* i ended up also making a `get-token2.ps1` with a different clientID/secretKey in my environment so i could run the script in 2 tabs or with 2 people using different app ID's to try and reduce API usage / throttling issues
+* if you want to do the same thing just register 2 entra apps, its just the same script each time just change up the variables at the beginning of the script
 
 **get-authaud.ps1**
 * This was a troubleshooting script I made to verify my roles and scopes and suchlike for the token, hopefully you don't have to get this deep into the weeds like I did
@@ -78,4 +72,5 @@
 
 **check-od.ps1**
 * just a small helper file I came up with to check the contents of a specified user's OneDrive\Home Folder -- just for a final verification if you want to run it, to ensure the files got copied over
-* in initial testing I'm just doing all of this to my own OneDrive folder so its no big deal I can just look at my own OneDrive whenever in many places, but, it might be more of a pain to check other people's OneDrive's later when I start migrating all of them
+* in initial testing I'm just doing all of this to my own OneDrive folder so its no big deal I can just look at my own OneDrive whenever in many places, but, it might be more of a pain to check other people's OneDrive's later when I start migrating all of them (we havent allowed users to use onedrive at all yet so there is nothing available for me to check in their `c:\users\...` directory or i would just do that)
+* the only issue with using this script is it is adding more API calls to your app token so might hit throttle limits sooner if you use this a bunch
