@@ -1,4 +1,5 @@
-# This is the final / updated version of the script I built, this one works a lot better than previous iterations and avoids messy emtpy nested folder issues etc., and added logging to this version!
+# This is the final / updated (and battle-tested in prod) version, this one works a lot better than previous iterations and avoids messy emtpy nested folder issues etc., and added logging to this version!
+# a lot of work was done to get this stage of the script, mostly focused around avoiding API throttle limits, a lot of vry smrt API batching calls are being performed now to reduce API usage. Cool!
 # I need to mention here that this ENTIRE THING only works because our Home Folders are named directly after our users, so their SAMAccountName in AD matches what their personal OneDrive URL will be
 # e.g., \\homefolder\dir\FirstnameL -> will be equal to -> https://company-my.sharepoint.com/personal/FirstnameL_company_com <- which is how this entire thing works
 # the very first line of this script prompts you to enter this SAMAccountName value first, which kicks off the entire rest of the thing
