@@ -13,7 +13,7 @@
 
 * You **will need to register an Entra App for this, and generate a secret key -- copy this secret key before leaving the page when you generate it -- you can't view the secret key again after you generate it the first time just a disclaimer**
 * install Marcel's OneDrive module as well: `Install-Module -Name OneDrive`
-* The way this script is supposed to function is that it fetches an access-token via Graph API and stashes it in the `$Auth` variable, so you can use it in other script (which you can check at any time by just typing `$Auth` in shell and seeing if the variable returns anything)
+* The way this script is supposed to function is that it fetches an access-token via Graph API and stashes it in the `$Auth` variable, so you can use it in other scripts so long as you stay in that authenticated shell context (which you can check at any time by just typing `$Auth` in shell and seeing if the variable returns anything)
 
 **I spent about 3 afternoons troubleshooting all this to get it working**
 
