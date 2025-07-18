@@ -22,14 +22,14 @@ function Write-Log {
 
 #==================================================================
 # ✨ THROTTLE HANDLING FUNCTION ✨
-# This function wraps Invoke-RestMethod to handle 429 (throttling) errors automatically.
+# This function wraps Invoke-RestMethod to handle HTTP 429 (throttling) errors automatically.
 #==================================================================
 function Invoke-GraphApiRequestWithRetry {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$Splat,
         [int]$MaxRetries = 5,
-        [int]$DefaultRetryAfterSeconds = 30 # Default wait time as requested
+        [int]$DefaultRetryAfterSeconds = 30
     )
 
     $retryCount = 0
@@ -72,7 +72,6 @@ function Invoke-GraphApiRequestWithRetry {
             }
             else {
                 # For other HTTP errors or if max retries are exceeded, re-throw the exception
-                # so the original script's error handling can take over.
                 throw
             }
         }
@@ -85,7 +84,7 @@ function Invoke-GraphApiRequestWithRetry {
 
 
 # Define base local path
-$baseLocalRoot = "\\<YOUR_DATA_SERVER>\<YOUR_HOMEFOLDERS_DIR>" # UPDATE THIS LINE TO WORK IN YOUR ENVIRONMENT BTW :) this is just whatever server location you host all the user's home folders on, you can find this in the HomeDirectory Attrib. in AD if you don't know
+$baseLocalRoot = "\\<YOUR_DATA_SERVER>\<YOUR_HOMEFOLDERS_DIR>" # UPDATE THIS LINE TO WORK IN YOUR ENVIRONMENT BTW :)
 $localPath = Join-Path $baseLocalRoot $username
 
 # Validate local folder exists
@@ -95,13 +94,15 @@ if (-not (Test-Path -LiteralPath $localPath)) {
 }
 
 # Construct OneDrive user ID and remote path
-$remoteUserId = $username.ToLower() -replace '[^a-z0-9]', ''
+# omg, make sure this matches ur upn format
+$userPrincipalName = "$($username)@company.com" 
 $remoteFolder = "Home Folder"
 $remotePath = "$remoteFolder"
 
 # Confirm before proceeding
 Write-Log "`n🧾 Summary:"
 Write-Log "📁 Local path: $localPath"
+Write-Log "👤 User Principal Name: $userPrincipalName"
 Write-Log "📂 OneDrive target folder: $remotePath"
 $confirm = Read-Host "`nProceed with upload? (Y/N)"
 if ($confirm -ne "Y") {
@@ -109,68 +110,53 @@ if ($confirm -ne "Y") {
     exit
 }
 
-#=== AUTH TOKEN ===
-# Assumes $Auth.access_token is already available from get-token.ps1
+# === AUTH TOKEN ===
 if (-not $Auth.access_token) {
-    Write-Log "❌ Auth token not found in `$Auth.accesstoken. Please run your authentication script first."
+    Write-Log "❌ Auth token not found in `$Auth.access_token. Please run your authentication script first."
     exit
 }
 $headers = @{ Authorization = "Bearer $($Auth.access_token)" }
 
 
-#=== GET DRIVE ID ===
-$driveUrl = "https://graph.microsoft.com/v1.0/users/${remoteUserId}@imcu.com/drive"
+# === GET DRIVE ID ===
+$driveUrl = "https://graph.microsoft.com/v1.0/users/$userPrincipalName/drive"
 try {
     Write-Log "🔍 Retrieving OneDrive drive ID…"
-    # ✨ MODIFIED - Use retry function
-    $irmParams = @{
-        Uri = $driveUrl
-        Headers = $headers
-        Method = 'GET'
-    }
+    $irmParams = @{ Uri = $driveUrl; Headers = $headers; Method = 'GET' }
     $driveResponse = Invoke-GraphApiRequestWithRetry -Splat $irmParams
     $driveId = $driveResponse.id
     Write-Log "✅ OneDrive drive ID: $driveId"
 }
 catch {
-    Write-Log "❌ Failed to retrieve OneDrive drive ID."
+    Write-Log "❌ Failed to retrieve OneDrive drive ID for '$userPrincipalName'."
     Write-Log "🔎 Error: $($_.Exception.Message)"
     exit
 }
 
-#=== CREATE ROOT FOLDER ===
-# URL-encode the root folder name
-$encodedRootFolder = [uri]::EscapeDataString($remoteFolder)
-$createRootUrl = "https://graph.microsoft.com/v1.0/drives/$driveId/root/children"
-$folderBody = @{
-    name = $remoteFolder
-    folder = @{}
-    "@microsoft.graph.conflictBehavior" = "fail" # Fail if folder already exists
-} | ConvertTo-Json -Depth 3
-
+# === CREATE ROOT FOLDER ===
 try {
-    Write-Log "📂 Creating root folder on OneDrive: '$remoteFolder'"
-    # ✨ - Use retry function
-    $irmParams = @{
-        Uri = $createRootUrl
-        Headers = $headers
-        Method = 'POST'
-        Body = $folderBody
-        ContentType = "application/json"
-    }
+    Write-Log "📂 Ensuring root folder on OneDrive exists: '$remoteFolder'"
+    $createRootUrl = "https://graph.microsoft.com/v1.0/drives/$driveId/root/children"
+    $folderBody = @{
+        name = $remoteFolder
+        folder = @{}
+        "@microsoft.graph.conflictBehavior" = "fail"
+    } | ConvertTo-Json -Depth 3
+    
+    $irmParams = @{ Uri = $createRootUrl; Headers = $headers; Method = 'POST'; Body = $folderBody; ContentType = "application/json" }
     Invoke-GraphApiRequestWithRetry -Splat $irmParams | Out-Null
 }
 catch {
-    if ($_.Exception.Response.StatusCode -eq 'Conflict' -or $_.Exception.Message -match "nameAlreadyExists") {
+    if ($_.Exception.Response.StatusCode.value__ -eq 409) { # 409 Conflict
         Write-Log "➡️ Root folder '$remoteFolder' already exists. Continuing."
-    }
-    else {
+    } else {
         Write-Log "⚠️ Failed to create root folder: $($_.Exception.Message)"
+        exit
     }
 }
 
 
-#=== UPLOAD FUNCTIONS ===
+# === UPLOAD FUNCTIONS (Large file upload is unchanged) ===
 $LargeFileThreshold = 4 * 1024 * 1024 # 4MB
 
 function Upload-LargeFile {
@@ -181,26 +167,24 @@ function Upload-LargeFile {
         [Parameter(Mandatory = $true)][hashtable]$Headers
     )
 
-    # Fallback: Custom Graph API upload session method
     $encodedFullRemoteFilePath = ($FullRemotePath.Split('/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
     $sessionUrl = "https://graph.microsoft.com/v1.0/drives/$DriveId/root:/$($encodedFullRemoteFilePath):/createUploadSession"
-    $sessionBody = @{ item = @{ "@microsoft.graph.conflictBehavior" = "rename" } } | ConvertTo-Json
+    # use 'fail' to avoid re-uploading existing files, change to 'replace' or 'rename' if u want different behavior
+    $sessionBody = @{ item = @{ "@microsoft.graph.conflictBehavior" = "fail" } } | ConvertTo-Json
 
     try {
         Write-Log "Creating upload session for '$($FileItem.Name)'..."
-        # ✨ - Use retry function
-        $irmParams = @{
-            Uri = $sessionUrl
-            Headers = $Headers
-            Method = 'POST'
-            Body = $sessionBody
-            ContentType = "application/json"
-        }
+        $irmParams = @{ Uri = $sessionUrl; Headers = $Headers; Method = 'POST'; Body = $sessionBody; ContentType = "application/json" }
         $sessionResponse = Invoke-GraphApiRequestWithRetry -Splat $irmParams
         $uploadUrl = $sessionResponse.uploadUrl
     }
     catch {
-        Write-Log "❌ Failed to create upload session for '$($FileItem.Name)': $($_.Exception.Message)"
+        # if the file already exists, the session creation will fail with a 409 conflict
+        if ($_.Exception.Response.StatusCode.value__ -eq 409) {
+            Write-Log "⏭️ Skipping large file '$($FileItem.Name)' — already exists."
+        } else {
+            Write-Log "❌ Failed to create upload session for '$($FileItem.Name)': $($_.Exception.Message)"
+        }
         return
     }
 
@@ -223,32 +207,22 @@ function Upload-LargeFile {
             $chunkData = New-Object byte[] $bytesRead
             [System.Array]::Copy($buffer, 0, $chunkData, 0, $bytesRead)
 
-            # Show progress
             $newProgress = [math]::Round(($endRange + 1) / $totalBytes * 100)
             if ($newProgress -gt $progress) {
                 $progress = $newProgress
                 Write-Host "`rUploading '$($FileItem.Name)': $progress% " -NoNewline
             }
 
-            # ✨ MODIFIED - Use retry function for each chunk
-            $irmParams = @{
-                Uri = $uploadUrl
-                Method = 'Put'
-                Headers = $uploadHeaders
-                Body = $chunkData
-                ContentType = "application/octet-stream"
-                ErrorAction = 'Stop'
-            }
+            $irmParams = @{ Uri = $uploadUrl; Method = 'Put'; Headers = $uploadHeaders; Body = $chunkData; ContentType = "application/octet-stream"; ErrorAction = 'Stop' }
             Invoke-GraphApiRequestWithRetry -Splat $irmParams
             $bytesUploaded += $bytesRead
         }
-
-        Write-Host "" # Newline after progress bar
+        Write-Host ""
         Write-Log "⬆️ Uploaded large file '$($FileItem.Name)'"
-        $global:size += $FileItem.Length
+        $global:bytesTransferred += $FileItem.Length
     }
     catch {
-        Write-Host "" # Newline after progress bar
+        Write-Host ""
         Write-Log "❌ Failed to upload chunk for '$($FileItem.Name)': $($_.Exception.Message)"
     }
     finally {
@@ -256,116 +230,169 @@ function Upload-LargeFile {
     }
 }
 
-function Copy-FilesToOneDrive ($localPath, $remotePath) {
+#==================================================================
+# ✨ BATCH REQUEST FUNCTION ✨
+# this little guy bundles up all our folder requests
+#==================================================================
+function Invoke-GraphBatchRequest {
+    param(
+        [Parameter(Mandatory=$true)]
+        [array]$Requests,
+        [Parameter(Mandatory=$true)]
+        [hashtable]$Headers
+    )
+    
+    if ($Requests.Count -eq 0) { return }
+
+    $batchUrl = "https://graph.microsoft.com/v1.0/`$batch"
+    $batchBody = @{ requests = $Requests } | ConvertTo-Json -Depth 10
+
+    $irmParams = @{ Uri = $batchUrl; Headers = $Headers; Method = 'POST'; Body = $batchBody; ContentType = "application/json" }
+    
     try {
-        $items = Get-ChildItem -LiteralPath $localPath -ErrorAction Stop
-    }
-    catch {
-        Write-Log "❌ Could not access local path '$localPath'. Error: $($_.Exception.Message)"
-        return
-    }
-    $CountFiles = ($items | Where-Object { -not $_.PSIsContainer }).Count
-    $CountFolders = ($items | Where-Object { $_.PSIsContainer }).Count
-
-    Write-Log "📁 Scanning '$localPath' (folders/files: $CountFolders/$CountFiles)"
-
-    $encodedParentPath = ($remotePath.Split('/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
-
-    foreach ($item in $items) {
-        if ($item.PSIsContainer) {
-            $newRemotePath = "$remotePath/$($item.Name)"
-            $folderUrl = "https://graph.microsoft.com/v1.0/drives/$driveId/root:/${encodedParentPath}:/children"
-            $folderBody = @{
-                name = $item.Name
-                folder = @{}
-                "@microsoft.graph.conflictBehavior" = "fail"
-            } | ConvertTo-Json -Depth 3
-
-            try {
-                # ✨ - Use retry function
-                $irmParams = @{
-                    Uri = $folderUrl
-                    Headers = $headers
-                    Method = 'POST'
-                    Body = $folderBody
-                    ContentType = "application/json"
-                }
-                Invoke-GraphApiRequestWithRetry -Splat $irmParams | Out-Null
-            }
-            catch {
-                if ($_.Exception.Response.StatusCode -eq 'Conflict' -or $_.Exception.Message -match "nameAlreadyExists") {
-                    Write-Log "➡️ Folder '$($item.Name)' already exists in '$remotePath'. Continuing."
-                }
-                else {
-                    Write-Log "⚠️ Could not create folder '$newRemotePath': $($_.Exception.Message)"
-                }
-            }
-            Copy-FilesToOneDrive -localPath $item.FullName -remotePath $newRemotePath
-        }
-        else { # It's a file
-            $fullRemoteFilePath = "$remotePath/$($item.Name)"
-            $encodedFullRemoteFilePath = ($fullRemoteFilePath.Split('/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
-
-            # Check if file already exists
-            $checkUrl = "https://graph.microsoft.com/v1.0/drives/$driveId/root:/$encodedFullRemoteFilePath"
-            try {
-                # ✨ - Use retry function
-                $irmParams = @{
-                    Uri = $checkUrl
-                    Headers = $headers
-                    Method = 'GET'
-                    ErrorAction = 'Stop'
-                }
-                Invoke-GraphApiRequestWithRetry -Splat $irmParams | Out-Null
-                Write-Log "⏭️ Skipping '$($item.Name)' — already exists in OneDrive."
-                continue
-            }
-            catch {
-                if ($_.Exception.Response.StatusCode -ne 'NotFound') {
-                    Write-Log "⚠️ Error checking if file '$($item.Name)' exists: $($_.Exception.Message)"
-                }
-            }
-
-            # Decide on upload method based on size
-            if ($item.Length -gt $LargeFileThreshold) {
-                Write-Log "📦 File '$($item.Name)' is large ($([math]::Round($item.Length / 1MB, 2)) MB). Using large file upload process."
-                Upload-LargeFile -FileItem $item -FullRemotePath $fullRemoteFilePath -DriveId $driveId -Headers $headers
-            }
-            else {
-                # Use simple upload for small files
-                $uploadUrl = "https://graph.microsoft.com/v1.0/drives/$driveId/root:/$($encodedFullRemoteFilePath):/content"
-                try {
-                    # ✨ - Use retry function
-                    $irmParams = @{
-                        Uri = $uploadUrl
-                        Headers = $headers
-                        Method = 'PUT'
-                        InFile = $item.FullName
-                        ContentType = "application/octet-stream"
-                    }
-                    Invoke-GraphApiRequestWithRetry -Splat $irmParams | Out-Null
-                    $global:size += $item.Length
-                    Write-Log "⬆️ Uploaded '$($item.Name)' to '$remotePath'"
-                }
-                catch {
-                    Write-Log "❌ Failed to upload '$($item.Name)': $($_.Exception.Message)"
-                }
-            }
-        }
+        Write-Log "📦 Sending batch request with $($Requests.Count) operations..."
+        $response = Invoke-GraphApiRequestWithRetry -Splat $irmParams
+        return $response.responses
+    } catch {
+        Write-Log "❌ Major failure in batch request: $($_.Exception.Message)"
+        return $null
     }
 }
 
+#==================================================================
+# ✨ recursive copy function ✨
+# this is where all the magic happens
+#==================================================================
+function Copy-FilesToOneDrive {
+    param(
+        [Parameter(Mandatory=$true)][string]$CurrentLocalPath,
+        [Parameter(Mandatory=$true)][string]$CurrentRemotePath
+    )
+
+    Write-Log "🔎 Processing local directory: '$CurrentLocalPath'"
+    
+    try {
+        $localItems = Get-ChildItem -LiteralPath $CurrentLocalPath -ErrorAction Stop
+    } catch {
+        Write-Log "❌ Could not access local path '$CurrentLocalPath'. Error: $($_.Exception.Message)"
+        return
+    }
+
+    $localFolders = $localItems | Where-Object { $_.PSIsContainer }
+    $localFiles = $localItems | Where-Object { -not $_.PSIsContainer }
+    $global:filesScanned += $localFiles.Count
+    $global:foldersScanned += $localFolders.Count
+    
+    $encodedParentPath = ($CurrentRemotePath.Split('/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
+
+    # --- Step 1: Create all subfolders in this directory using a batch request ---
+    if ($localFolders.Count -gt 0) {
+        $folderRequests = @()
+        $requestId = 1
+        foreach ($folder in $localFolders) {
+            $folderRequest = @{
+                id = "$($requestId++)"
+                method = "POST"
+                url = "/drives/$driveId/root:/$($encodedParentPath):/children"
+                headers = @{ "Content-Type" = "application/json" }
+                body = @{
+                    name = $folder.Name
+                    folder = @{}
+                    "@microsoft.graph.conflictBehavior" = "fail"
+                }
+            }
+            $folderRequests += $folderRequest
+        }
+
+        # The Graph API allows a maximum of 20 requests per batch.
+        $batchSize = 20
+        for ($i = 0; $i -lt $folderRequests.Count; $i += $batchSize) {
+            $chunk = $folderRequests[$i..[System.Math]::Min($i + $batchSize - 1, $folderRequests.Count - 1)]
+            $batchResponses = Invoke-GraphBatchRequest -Requests $chunk -Headers $headers
+            
+            # log results of the batch
+            foreach($response in $batchResponses) {
+                $requestName = $chunk[[int]$response.id - 1].body.name
+                if ($response.status -ge 200 -and $response.status -le 299) {
+                    Write-Log "✅ Created folder '$requestName' in '$CurrentRemotePath'"
+                } elseif ($response.status -eq 409) { # 409 Conflict
+                     Write-Log "➡️ Folder '$requestName' already exists. Continuing."
+                } else {
+                    Write-Log "⚠️ Error creating folder '$requestName': $($response.body.error.message)"
+                }
+            }
+        }
+    }
+
+    # --- Step 2: Get a list of remote files to avoid re-uploading ---
+    $remoteFileNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    try {
+        $childrenUrl = "https://graph.microsoft.com/v1.0/drives/$driveId/root:/$encodedParentPath:/children?`$select=name,file"
+        $irmParams = @{ Uri = $childrenUrl; Headers = $headers; Method = 'GET' }
+        $remoteChildren = (Invoke-GraphApiRequestWithRetry -Splat $irmParams).value
+        # only add items that are files to our hashset
+        foreach($child in $remoteChildren){
+            if($child.file){ $remoteFileNames.Add($child.name) | Out-Null }
+        }
+    } catch {
+        Write-Log "⚠️ Could not list remote files in '$CurrentRemotePath'. May re-upload files. Error: $($_.Exception.Message)"
+    }
+    
+    # --- Step 3: Upload any local files that are not on the remote ---
+    foreach ($file in $localFiles) {
+        if ($remoteFileNames.Contains($file.Name)) {
+            Write-Log "⏭️ Skipping '$($file.Name)' — already exists in OneDrive."
+            continue
+        }
+
+        $fullRemoteFilePath = "$CurrentRemotePath/$($file.Name)"
+        if ($file.Length -gt $LargeFileThreshold) {
+            Write-Log "📦 File '$($file.Name)' is large ($([math]::Round($file.Length / 1MB, 2)) MB). Using large file upload process."
+            Upload-LargeFile -FileItem $file -FullRemotePath $fullRemoteFilePath -DriveId $driveId -Headers $headers
+        } else {
+            # Simple upload for small files
+            $encodedFullRemoteFilePath = ($fullRemoteFilePath.Split('/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
+            $uploadUrl = "https://graph.microsoft.com/v1.0/drives/$driveId/root:/$($encodedFullRemoteFilePath):/content"
+            try {
+                $irmParams = @{ Uri = $uploadUrl; Headers = $headers; Method = 'PUT'; InFile = $file.FullName; ContentType = "application/octet-stream" }
+                Invoke-GraphApiRequestWithRetry -Splat $irmParams | Out-Null
+                $global:bytesTransferred += $file.Length
+                Write-Log "⬆️ Uploaded '$($file.Name)' to '$CurrentRemotePath'"
+            }
+            catch {
+                # A 409 here would be unexpected since we already checked, but handle it just in case
+                if ($_.Exception.Response.StatusCode.value__ -eq 409) {
+                    Write-Log "⏭️ Skipping '$($file.Name)' — already exists (detected during upload)."
+                } else {
+                    Write-Log "❌ Failed to upload '$($file.Name)': $($_.Exception.Message)"
+                }
+            }
+        }
+    }
+    
+    # --- Step 4: Recurse into subdirectories ---
+    foreach ($folder in $localFolders) {
+        $newRemotePath = "$CurrentRemotePath/$($folder.Name)"
+        Copy-FilesToOneDrive -CurrentLocalPath $folder.FullName -CurrentRemotePath $newRemotePath
+    }
+}
+
+
 # Initialize counters
-$global:size = 0
-$global:AllFiles = 0
-$global:AllFolders = 0
+$global:bytesTransferred = 0
+$global:filesScanned = 0
+$global:foldersScanned = 0
 
 # Start upload
 Write-Log "`n🚀 Starting upload process…"
-Copy-FilesToOneDrive -localPath $localPath -remotePath $remotePath
+$startTime = Get-Date
+Copy-FilesToOneDrive -CurrentLocalPath $localPath -CurrentRemotePath $remotePath
+$endTime = Get-Date
 
 # Summary
-Write-Log "`n✅ Upload complete!"
-Write-Log "📄 Files scanned: $global:AllFiles"
-Write-Log "📁 Folders scanned: $global:AllFolders"
-Write-Log ("📦 Bytes transferred: {0:N0}" -f $global:Size)
+$duration = New-TimeSpan -Start $startTime -End $endTime
+Write-Log "`n✅ Upload process finished!"
+Write-Log "📄 Files scanned: $global:filesScanned"
+Write-Log "📁 Folders scanned: $global:foldersScanned"
+Write-Log ("📦 Total bytes transferred: {0:N2} MB" -f ($global:bytesTransferred / 1MB))
+Write-Log ("⏱️ Total time: {0:N0} minutes and {1} seconds" -f $duration.TotalMinutes, $duration.Seconds)
