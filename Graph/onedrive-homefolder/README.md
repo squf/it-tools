@@ -50,6 +50,10 @@
 
 # Scripts readme
 
+*The only two scripts you would need to use this tool in your environment are `ODHF.ps1` and `get-token.ps1` -- the rest of the scripts in this repo are to show how I ended up building the primary `ODHF.ps1` script and all the testing and debugging it went through*
+*`get-token.ps1` needs to be run first to grab the access_token that Graph API needs to work*
+*`ODHF.ps1` is the primary script that actually copies the files from the onprem data server to the user's OneDrive, relies on access_token being stored in `$Auth` variable via the `get-token.ps1` script being run first
+
 **ODHF.ps1**
 * This is the primary script which actually does the checking of parent and child directories, and copies the files over to OneDrive. it stands for OneDriveHomeFolder btw.
 * You need to run `get-token.ps1` before running this, which stores the `access_token` you need for authentication into the `$Auth` variable in your shell.
@@ -74,3 +78,12 @@
 * just a small helper file I came up with to check the contents of a specified user's OneDrive\Home Folder -- just for a final verification if you want to run it, to ensure the files got copied over
 * in initial testing I'm just doing all of this to my own OneDrive folder so its no big deal I can just look at my own OneDrive whenever in many places, but, it might be more of a pain to check other people's OneDrive's later when I start migrating all of them (we havent allowed users to use onedrive at all yet so there is nothing available for me to check in their `c:\users\...` directory or i would just do that)
 * the only issue with using this script is it is adding more API calls to your app token so might hit throttle limits sooner if you use this a bunch
+
+**debug-batch.ps1**
+* while trying to implement batched requests I was getting lots of HTTP 400 / 404 errors, basically malformed JSON requests, but I couldn't figure out what was wrong
+* this script was built to wrap an earlier version of `ODHF.ps1` into a logging format, so i could capture the API requests I was sending and the responses I was getting for troubleshooting
+* after running this script, i found the issue was that i wasn't sending an `id` value in the batch request for creating folders so it was always failing to create folders
+* then, i also found that basically the logic of the script was that it was creating folders and then immediately checking them for whether files existed in them or not, causing 404 errors
+* this is because it takes longer than "IMMEDIATELY IN LESS THAN 1 SECOND" for the folders / files to replicate into OneDrive, the script was just running too fast
+* so long story short, there's no a short wait time / retry in the file checking portion of the script, this is just to try and cut down on API requests and file duplication issues by checking for existing files before copying them over where possible
+* this script is NOT necessary in your environment i'm just including it here for archive reasons and to show what i went through to build this out, also, this script is using an older version of `ODHF.ps1` because this script was used to help build the current version, so there's no reason to use this script anywhere it will just not work. just a neat script showing wrapping API requests into a loggable format for troubleshooting / debugging purposes.
