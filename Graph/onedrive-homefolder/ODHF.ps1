@@ -6,16 +6,24 @@
 # so if your environment has mismatched UPN issues, or you don't name your Home Folders after your users SAMAccountName attributes, or anything else, this script is entirely useless for you!
 
 # Begin Script --- Prompt for username and log directory, then upload files to OneDrive using Microsoft Graph API
-# Requires: get-token.ps1 to be run first to set $Auth.access_token
+# Requires: Registered Entra app to set $Auth.access_token (view readme)
 
-$username = Read-Host "Enter the username (e.g., FirstnameL)" # Enter UPN to copy here, matching your Home Folder data server structure and general UPN format
+$username = Read-Host "Enter the username (e.g., FirstnameL)"
 
 #==================================================================
 # ✨ SETUP AND VALIDATION ✨
 #==================================================================
 
+# === AUTHENTICATION DETAILS ===
+$clientId = "<YOUR_CLIENTID_HERE>"
+$clientSecret = "<YOUR_CLIENTSECRET_HERE>"
+$tenantId = "<YOUR_TENANTID_HERE>"
+
+# Global variable to hold the token and its expiry time
+$global:AuthTokenInfo = @{}
+
 # === LOGGING SETUP ===
-$logDir = "C:\tmp\ODHF_Logs" # This is where the log of file moves will be saved, this directory will be created if it does not exist already, so check your C:\tmp\ODHF_Logs directory afterwards for this log file!
+$logDir = "C:\tmp\ODHF_Logs" # Logging location
 if (-not (Test-Path $logDir)) { New-Item -Path $logDir -ItemType Directory | Out-Null }
 $logFile = Join-Path $logDir "$username.txt"
 
@@ -28,18 +36,14 @@ function Write-Log {
 }
 
 # === DEFINE PATHS ===
-$baseLocalRoot     = "\\<PATH_TO_YOUR_DATA_SERVER>\<DIR_WHERE_YOU_STORE_USER_HOME_FOLDERS>" # Update this line to match your company's Home Folder data server UNC path
+$baseLocalRoot     = "<\\YOUR_DATASERVER_LOCATION\HOMEFOLDER_DIR>" # Update this line to point to your UNC path in your environment, found in AD under a user's Home Directory attribute
 $localPath         = Join-Path $baseLocalRoot $username
-$userPrincipalName = "$($username)@company.com" # Update this line to match your company UPNs
+$userPrincipalName = "$($username)@company.com" # Update this line to match your company UPN format
 $remoteFolder      = "Home Folder" # This is the root folder to be created in OneDrive
 $LargeFileThreshold = 15 * 1024 * 1024 # 15 MB
 
-# === VALIDATE AUTH TOKEN ===
-if (-not $Auth.access_token) {
-    Write-Log "❌ Auth token not found in `$Auth.access_token. Please run your authentication script first."
-    exit
-}
-$headers = @{ Authorization = "Bearer $($Auth.access_token)" }
+# === AUTHENTICATION PLACEHOLDER ===
+$headers = @{}
 
 # === VALIDATE LOCAL FOLDER ===
 if (-not (Test-Path -LiteralPath $localPath)) {
@@ -63,22 +67,43 @@ if ($confirm -ne 'Y') {
 #==================================================================
 # ✨ API HELPER FUNCTIONS ✨
 #==================================================================
-
 function Invoke-GraphApiRequestWithRetry {
     param(
         [Parameter(Mandatory = $true)] [hashtable]$Splat,
         [int]$MaxRetries = 5,
         [int]$DefaultRetryAfterSeconds = 30
     )
+
+    # === TOKEN REFRESH LOGIC ===
+    # Check if the token is missing or is about to expire
+    if (-not $global:AuthTokenInfo.AccessToken -or (Get-Date) -ge $global:AuthTokenInfo.ExpiresOn) {
+        Get-NewGraphToken
+    }
+    
+    # Add/update the authorization header in the request
+    $Splat.Headers.Authorization = "Bearer $($global:AuthTokenInfo.AccessToken)"
+    # === END TOKEN REFRESH LOGIC ===
+
     $retryCount = 0
     while ($true) {
         try {
             return Invoke-RestMethod @Splat
         }
         catch [Microsoft.PowerShell.Commands.HttpResponseException] {
-            if ($_.Exception.Response.StatusCode.value__ -eq 429 -and $retryCount -lt $MaxRetries) {
+            $errorResponse = $_.Exception.Response
+            # If we get a 401, our token might be stale despite our check. Force a refresh and retry once.
+            if ($errorResponse.StatusCode.value__ -eq 401 -and $retryCount -eq 0) {
+                Write-Log "⚠️ Received 401 Unauthorized. Forcing token refresh and retrying the call once."
                 $retryCount++
-                $retryAfterHeader = $_.Exception.Response.Headers['Retry-After']
+                Get-NewGraphToken
+                $Splat.Headers.Authorization = "Bearer $($global:AuthTokenInfo.AccessToken)"
+                continue # Go to the top of the while loop to retry the API call
+            }
+            
+            # (The rest of the existing 429 throttling logic stays here)
+            if ($errorResponse.StatusCode.value__ -eq 429 -and $retryCount -lt $MaxRetries) {
+                $retryCount++
+                $retryAfterHeader = $errorResponse.Headers['Retry-After']
                 $waitTimeSeconds = $DefaultRetryAfterSeconds
                 if ($null -ne $retryAfterHeader) {
                     if (-not ([int]::TryParse($retryAfterHeader, [ref]$waitTimeSeconds))) {
@@ -86,12 +111,10 @@ function Invoke-GraphApiRequestWithRetry {
                             $retryDate = [datetimeoffset]::Parse($retryAfterHeader, [System.Globalization.CultureInfo]::InvariantCulture)
                             $secondsToWait = ($retryDate - [datetimeoffset]::UtcNow).TotalSeconds
                             if ($secondsToWait -gt 0) { $waitTimeSeconds = [math]::Ceiling($secondsToWait) }
-                        } catch {
-                            Write-Log "⚠️ Could not parse Retry-After date header. Using default."
-                        }
+                        } catch { Write-Log "⚠️ Could not parse Retry-After date header." }
                     }
                 }
-                if ($waitTimeSeconds -gt 300) { $waitTimeSeconds = 300 } # Max wait 5 mins
+                if ($waitTimeSeconds -gt 300) { $waitTimeSeconds = 300 }
                 if ($waitTimeSeconds -le 0) { $waitTimeSeconds = 1 }
                 Write-Log "⏳ API throttled (429). Retrying in $waitTimeSeconds seconds... (Attempt $retryCount of $MaxRetries)"
                 Start-Sleep -Seconds $waitTimeSeconds
@@ -177,6 +200,29 @@ function Upload-LargeFile {
     }
     finally {
         if ($fileStream) { $fileStream.Close() }
+    }
+}
+
+function Get-NewGraphToken {
+    Write-Log "🔄 Refreshing API access token..."
+    $tokenUrl = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
+    $tokenBody = @{
+        client_id     = $clientId
+        client_secret = $clientSecret
+        scope         = "https://graph.microsoft.com/.default"
+        grant_type    = "client_credentials"
+    }
+
+    try {
+        $tokenResponse = Invoke-RestMethod -Uri $tokenUrl -Method Post -Body $tokenBody
+        $global:AuthTokenInfo.AccessToken = $tokenResponse.access_token
+        # Set expiry to 5 minutes before it actually expires, for a safe buffer
+        $global:AuthTokenInfo.ExpiresOn = (Get-Date).AddSeconds($tokenResponse.expires_in - 300)
+        Write-Log "✅ New token acquired. Valid until $($global:AuthTokenInfo.ExpiresOn.ToString('T'))"
+    }
+    catch {
+        Write-Log "❌ FATAL: Could not get new access token. Error: $($_.Exception.Message)"
+        throw
     }
 }
 
@@ -316,7 +362,7 @@ function Copy-FilesToOneDrive {
 }
 
 # =================================================================
-# =================== SCRIPT EXECUTION STARTS HERE ==================
+# =================== SCRIPT EXECUTION STARTS HERE ================
 # =================================================================
 
 # === GET DRIVE ID ===
