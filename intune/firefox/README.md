@@ -6,3 +6,8 @@
 * The reg script(s) are designed to detect the existence of the `...\FirefoxHelper.log` output from the helper scripts, and if they exist, then it will try to delete: `HKLM\SOFTWARE\Mozilla` `...\mozilla.org` `...\MozillaPlugins` in registry, and output results to `C:\tmp\FirefoxRegistry.log`
 * This should in theory work to completely remove Firefox cleanly from PC's these scripts are assigned to via Remediation Script in Intune
 * But who knows, these are like the 5th version(s) of similar scripts I've been trying to run for a week now with no success (!)
+---
+* The other scripts in here were kind of working but not very well, after weeks of running we got our Discovered Apps report down from about 200 instances of Firefox to about 50
+* Based on this, added `FF_nuke_det` and `FF_nuke_rem` detection & remediation scripts, which should be much more aggressive and comprehensive
+
+>Note: I will need to continue monitoring how the nukes work from here and I am hoping to once and for all rid my tenant of Firefox
