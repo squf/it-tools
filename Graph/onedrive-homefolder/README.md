@@ -74,6 +74,7 @@ The main script (`ODHF.ps1`) has been optimized to be efficient and resilient:
   * **Throttling & Delay Handling:** Includes logic to automatically wait and retry on `HTTP 429` (throttling) errors and `HTTP 404` errors caused by API replication delays.
   * **Large File Support:** Automatically uses resumable upload sessions for files larger than 15 MB.
   * **Logging:** All operations are logged to a user-specific text file in `C:\tmp\ODHF_Logs` for easy tracking.
+  * **Rate Limit Requests & Tracking:** Pre-flight check for current rate limit quota, including automatic script pausing before rate limit is hit.
 
 -----
 
