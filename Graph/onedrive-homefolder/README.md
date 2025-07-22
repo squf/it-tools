@@ -4,7 +4,11 @@ This repository contains a PowerShell script designed to migrate on-premises use
 
 This project was developed for a Hybrid Azure AD Joined (HAADJ) environment and serves as a free alternative to paid tools for this specific migration task.
 
-**Disclaimer:** These scripts worked in my environment as of July 2025. While they include robust error handling, use them at your own risk. For enterprise-grade migrations with support, consider purchasing a dedicated tool like **[ShareGate](https://sharegate.com/)**.
+> **Disclaimer:** These scripts worked in my environment as of July 2025. While they include robust error handling, use them at your own risk. For enterprise-grade migrations with support, consider purchasing a dedicated tool like **[ShareGate](https://sharegate.com/)**.
+
+ShareGate uses a concurrent migration path, the script located here is a sequenced migration, so you are much more likely to run into API throttle limits using this script here. For any large or important Enterprise level migration I would strongly suggest purchasing ShareGate over relying on the script provided here (`ODHF.ps1`). 
+
+This script is mostly for personal education and would only be very useful in a smaller environment with fewer than 50 users more than likely.
 
 -----
 
