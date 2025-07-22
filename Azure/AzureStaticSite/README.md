@@ -4,6 +4,10 @@
 
 `Get-InstalledModule -Name Az -AllVersions | select Name,Version`
 
+* If not installed, run
+
+`Install-Module -Name Az -Repository PSGallery -Force`
+
 * Connect to Azure
 
 `Connect-AzAccount`
