@@ -55,6 +55,7 @@ Open `ODHF.ps1` in an editor and fill in the configuration variables at the top:
 
 1.  **Authentication Details:** Add your Entra app's `clientId`, `clientSecret`, and `tenantId`.
 2.  **Path Details:** Set the `$baseLocalRoot` variable to the UNC path of your on-premises user home directories (e.g., `\\server\users`).
+3.  **Company name:** Set the `$userPrincipalName` variable to match your company UPN value (e.g., `@company.com`).
 
 ### Step 2: Run the Migration
 
