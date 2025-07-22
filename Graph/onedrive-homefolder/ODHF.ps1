@@ -1,17 +1,17 @@
-# Begin Script --- Prompt for username and log directory, then upload files to OneDrive using Microsoft Graph API
+# Begin Script --- OneDrive Home Folder Migration
 # Requires: Registered Entra app to set $Auth.access_token (view readme)
-# Be sure to update lines: 12, 13, 14, 40 & 42 for use in your environment
+# Update lines: 12, 13, 14, 352 & 354 to work in your environment
 
 $username = Read-Host "Enter the username (e.g., FirstnameL)"
 
 #==================================================================
-# ✨ SETUP AND VALIDATION ✨
+# ✨ SETUP AND CONFIGURATION ✨
 #==================================================================
 
 # === AUTHENTICATION DETAILS ===
-$clientId = "<YOUR-CLIENT-ID-HERE>"
-$clientSecret = "<YOUR-CLIENT-SECRET-HERE>"
-$tenantId = "<YOUR-TENANT-ID-HERE>"
+$clientId     = "<YOUR-CLIENT-ID-HERE>" # UPDATE THIS LINE
+$clientSecret = "<YOUR-CLIENT-SECRET-HERE>" # UPDATE THIS LINE
+$tenantId     = "<YOUR-TENANT-ID-HERE>" # UPDATE THIS LINE
 
 # Global variable to hold the token and its expiry time
 $global:AuthTokenInfo = @{}
@@ -23,10 +23,9 @@ $global:RateLimit = @{
     Reset     = 'N/A'
 }
 
-# === LOGGING SETUP ===
-$logDir = "C:\tmp\ODHF_Logs" # LOGGING LOCATION
-if (-not (Test-Path $logDir)) { New-Item -Path $logDir -ItemType Directory | Out-Null }
-$logFile = Join-Path $logDir "$username.txt"
+#==================================================================
+# ✨ FUNCTION DEFINITIONS ✨
+#==================================================================
 
 function Write-Log {
     param ([string]$message)
@@ -36,48 +35,37 @@ function Write-Log {
     Add-Content -Path $logFile -Value $entry
 }
 
-# === DEFINE PATHS ===
-$baseLocalRoot     = "\\<YOUR-DATA-SERVER>\<YOUR-USERS-HOME-FOLDERS>" # UPDATE THIS LINE TO POINT TO YOUR ONPREM HOME FOLDER DIRECTORY (i.e., the parent folder under a given user's HomeDir attribute in AD)
-$localPath         = Join-Path $baseLocalRoot $username
-$userPrincipalName = "$($username)@company.com" # UPDATE THIS LINE TO MATCH YOUR COMPANY UPN FORMAT
-$remoteFolder      = "Home Folder" # This is the root folder to be created in OneDrive
-$LargeFileThreshold = 15 * 1024 * 1024 # 15 MB
+function Get-NewGraphToken {
+    Write-Log "🔄 Refreshing API access token..."
+    $tokenUrl = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
+    $tokenBody = @{
+        client_id     = $clientId
+        client_secret = $clientSecret
+        scope         = "https://graph.microsoft.com/.default"
+        grant_type    = "client_credentials"
+    }
 
-# === AUTHENTICATION PLACEHOLDER ===
-$headers = @{}
-
-# === VALIDATE LOCAL FOLDER ===
-if (-not (Test-Path -LiteralPath $localPath)) {
-    Write-Log "❌ Local folder not found: $localPath. Please check the username and network path."
-    exit
+    try {
+        $tokenResponse = Invoke-RestMethod -Uri $tokenUrl -Method Post -Body $tokenBody
+        $global:AuthTokenInfo.AccessToken = $tokenResponse.access_token
+        # Set expiry to 5 minutes before it actually expires, for a safe buffer
+        $global:AuthTokenInfo.ExpiresOn = (Get-Date).AddSeconds($tokenResponse.expires_in - 300)
+        Write-Log "✅ New token acquired. Valid until $($global:AuthTokenInfo.ExpiresOn.ToString('T'))"
+    }
+    catch {
+        Write-Log "❌ FATAL: Could not get new access token. Error: $($_.Exception.Message)"
+        throw
+    }
 }
 
-# === INITIAL RATE LIMIT CHECK ===
-try {
-    Write-Log "`n📊 Checking initial API rate limits..."
-    Invoke-GraphApiRequestWithRetry -Splat @{ Uri = "https://graph.microsoft.com/v1.0/me"; Headers = $headers; Method = 'GET' } | Out-Null
-    Write-Log "--------------------------------------------------"
-    Write-Log "Current API Quota Remaining: $($global:RateLimit.Remaining) / $($global:RateLimit.Limit)"
-    Write-Log "--------------------------------------------------"
-} catch {
-    Write-Log "⚠️ Could not check initial rate limits. Proceeding with caution."
-}
-# === CONFIRMATION ===
-Write-Log "`n🧾 Summary of Operation:"
-Write-Log "--------------------------------------------------"
-Write-Log "📁 Source (On-Prem): '$localPath'"
-Write-Log "👤 Target User: '$userPrincipalName'"
-Write-Log "☁️  OneDrive Destination: '$remoteFolder'"
-Write-Log "--------------------------------------------------"
-$confirm = Read-Host "`nProceed with migration? (Y/N)"
-if ($confirm -ne 'Y') {
-    Write-Log "❌ Operation cancelled by user."
-    exit
+function Update-RateLimitStatus {
+    param ([hashtable]$Headers)
+
+    if ($Headers.'RateLimit-Limit') { $global:RateLimit.Limit = $Headers.'RateLimit-Limit' }
+    if ($Headers.'RateLimit-Remaining') { $global:RateLimit.Remaining = [int]$Headers.'RateLimit-Remaining' }
+    if ($Headers.'RateLimit-Reset') { $global:RateLimit.Reset = $Headers.'RateLimit-Reset' }
 }
 
-#==================================================================
-# ✨ API HELPER FUNCTIONS ✨
-#==================================================================
 function Invoke-GraphApiRequestWithRetry {
     param(
         [Parameter(Mandatory = $true)] [hashtable]$Splat,
@@ -86,36 +74,31 @@ function Invoke-GraphApiRequestWithRetry {
     )
 
     # === TOKEN REFRESH LOGIC ===
-    # Check if the token is missing or is about to expire
     if (-not $global:AuthTokenInfo.AccessToken -or (Get-Date) -ge $global:AuthTokenInfo.ExpiresOn) {
         Get-NewGraphToken
     }
-    
-    # Add/update the authorization header in the request
     $Splat.Headers.Authorization = "Bearer $($global:AuthTokenInfo.AccessToken)"
     # === END TOKEN REFRESH LOGIC ===
 
     $retryCount = 0
     while ($true) {
         try {
-                $responseHeaders = $null
-                $response = Invoke-RestMethod @Splat -ResponseHeadersVariable responseHeaders
-                Update-RateLimitStatus -Headers $responseHeaders
-                return $response
+            $responseHeaders = $null
+            $response = Invoke-RestMethod @Splat -ResponseHeadersVariable responseHeaders
+            Update-RateLimitStatus -Headers $responseHeaders
+            return $response
         }
         catch [Microsoft.PowerShell.Commands.HttpResponseException] {
             $errorResponse = $_.Exception.Response
             Update-RateLimitStatus -Headers $errorResponse.Headers
-            # If we get a 401, our token might be stale despite our check. Force a refresh and retry once.
             if ($errorResponse.StatusCode.value__ -eq 401 -and $retryCount -eq 0) {
                 Write-Log "⚠️ Received 401 Unauthorized. Forcing token refresh and retrying the call once."
                 $retryCount++
                 Get-NewGraphToken
                 $Splat.Headers.Authorization = "Bearer $($global:AuthTokenInfo.AccessToken)"
-                continue # Go to the top of the while loop to retry the API call
+                continue
             }
             
-            # (The rest of the existing 429 throttling logic stays here)
             if ($errorResponse.StatusCode.value__ -eq 429 -and $retryCount -lt $MaxRetries) {
                 $retryCount++
                 $retryAfterHeader = $errorResponse.Headers['Retry-After']
@@ -147,10 +130,8 @@ function Invoke-GraphBatchRequest {
     )
     if ($Requests.Count -eq 0) { return }
     $batchUrl = "https://graph.microsoft.com/v1.0/`$batch"
-    
     $batchPayload = @{ requests = $Requests }
     $batchJsonBody = $batchPayload | ConvertTo-Json -Depth 10
-
     $irmParams = @{
         Uri         = $batchUrl
         Headers     = $Headers
@@ -206,7 +187,7 @@ function Upload-LargeFile {
             Invoke-GraphApiRequestWithRetry -Splat $irmParams | Out-Null
             $bytesUploaded += $bytesRead
         }
-        Write-Host "" # Newline after progress bar
+        Write-Host ""
         Write-Log "⬆️ Uploaded large file '$($FileItem.Name)'"
         $global:bytesTransferred += $FileItem.Length
     }
@@ -219,39 +200,6 @@ function Upload-LargeFile {
     }
 }
 
-function Get-NewGraphToken {
-    Write-Log "🔄 Refreshing API access token..."
-    $tokenUrl = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
-    $tokenBody = @{
-        client_id     = $clientId
-        client_secret = $clientSecret
-        scope         = "https://graph.microsoft.com/.default"
-        grant_type    = "client_credentials"
-    }
-
-    try {
-        $tokenResponse = Invoke-RestMethod -Uri $tokenUrl -Method Post -Body $tokenBody
-        $global:AuthTokenInfo.AccessToken = $tokenResponse.access_token
-        # Set expiry to 5 minutes before it actually expires, for a safe buffer
-        $global:AuthTokenInfo.ExpiresOn = (Get-Date).AddSeconds($tokenResponse.expires_in - 300)
-        Write-Log "✅ New token acquired. Valid until $($global:AuthTokenInfo.ExpiresOn.ToString('T'))"
-    }
-    catch {
-        Write-Log "❌ FATAL: Could not get new access token. Error: $($_.Exception.Message)"
-        throw
-    }
-}
-
-function Update-RateLimitStatus {
-    param ([hashtable]$Headers)
-
-    if ($Headers.'RateLimit-Limit') { $global:RateLimit.Limit = $Headers.'RateLimit-Limit' }
-    if ($Headers.'RateLimit-Remaining') { $global:RateLimit.Remaining = [int]$Headers.'RateLimit-Remaining' }
-    if ($Headers.'RateLimit-Reset') { $global:RateLimit.Reset = $Headers.'RateLimit-Reset' }
-}
-#==================================================================
-# ✨ RECURSIVE COPY FUNCTION ✨
-#==================================================================
 function Copy-FilesToOneDrive {
     param(
         [Parameter(Mandatory=$true)][string]$CurrentLocalPath,
@@ -259,16 +207,16 @@ function Copy-FilesToOneDrive {
     )
     Write-Log "🔎 Processing local directory: '$CurrentLocalPath'"
     # Check the remaining API quota before processing the folder
-if ($global:RateLimit.Remaining -is [int] -and $global:RateLimit.Remaining -lt 200) { # Using 200 as a safe buffer
-    $resetSeconds = $global:RateLimit.Reset
-    Write-Log "⚠️ WARNING: API quota is low ($($global:RateLimit.Remaining) remaining). Pausing script for $resetSeconds seconds until quota resets..."
-    Start-Sleep -Seconds $resetSeconds
-    # After waiting, we make one call to refresh the status
-    try {
-        Invoke-GraphApiRequestWithRetry -Splat @{ Uri = "https://graph.microsoft.com/v1.0/me"; Headers = $headers; Method = 'GET' } | Out-Null
-        Write-Log "✅ API quota has been reset. Resuming migration."
-    } catch { Write-Log "⚠️ Resuming migration, but could not confirm new quota." }
-}
+    if ($global:RateLimit.Remaining -is [int] -and $global:RateLimit.Remaining -lt 200) { # Using 200 as a safe buffer
+        $resetSeconds = $global:RateLimit.Reset
+        Write-Log "⚠️ WARNING: API quota is low ($($global:RateLimit.Remaining) remaining). Pausing script for $resetSeconds seconds until quota resets..."
+        Start-Sleep -Seconds $resetSeconds
+        try {
+            $checkUri = "https://graph.microsoft.com/v1.0/users?`$top=1&`$select=id"
+            Invoke-GraphApiRequestWithRetry -Splat @{ Uri = $checkUri; Headers = $headers; Method = 'GET' } | Out-Null
+            Write-Log "✅ API quota has been reset. Resuming migration."
+        } catch { Write-Log "⚠️ Resuming migration, but could not confirm new quota." }
+    }
     try {
         $localItems = Get-ChildItem -LiteralPath $CurrentLocalPath -ErrorAction Stop
         $localFolders = $localItems | Where-Object { $_.PSIsContainer }
@@ -281,7 +229,7 @@ if ($global:RateLimit.Remaining -is [int] -and $global:RateLimit.Remaining -lt 2
     }
     $encodedParentPath = ($CurrentRemotePath.Split('/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
 
-    # --- Step 1: Create all subfolders via batch request ---
+    # Step 1: Create all subfolders via batch request
     if ($localFolders.Count -gt 0) {
         $folderRequests = @()
         $requestId = 1
@@ -324,8 +272,7 @@ if ($global:RateLimit.Remaining -is [int] -and $global:RateLimit.Remaining -lt 2
         }
     }
 
-    # === THIS IS THE MODIFIED SECTION ===
-    # --- Step 2: Get list of remote files, with retries for 404 errors ---
+    # Step 2: Get list of remote files, with retries for 404 errors
     $remoteFileNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     $listRetries = 3
     for ($attempt = 1; $attempt -le $listRetries; $attempt++) {
@@ -338,27 +285,24 @@ if ($global:RateLimit.Remaining -is [int] -and $global:RateLimit.Remaining -lt 2
                     if($child.file) { $remoteFileNames.Add($child.name) | Out-Null }
                 }
             }
-            break # Success, so we exit the retry loop
+            break
         }
         catch [Microsoft.PowerShell.Commands.HttpResponseException] {
             if ($_.Exception.Response.StatusCode.value__ -eq 404 -and $attempt -lt $listRetries) {
-                # This is a 404 error and we can still retry.
                 Write-Log "⏳ Path not found (404), likely a replication delay. Retrying in 3 seconds... (Attempt $attempt of $listRetries)"
                 Start-Sleep -Seconds 3
             } else {
-                # This is a different error, or the last retry failed. Log and break.
                 Write-Log "⚠️ Could not list remote files in '$CurrentRemotePath'. Error: $($_.Exception.Message)"
                 break 
             }
         }
         catch {
-            # A non-API error occurred. Log and break.
             Write-Log "⚠️ Could not list remote files in '$CurrentRemotePath'. Unhandled Error: $($_.Exception.Message)"
             break
         }
     }
     
-    # --- Step 3: Upload local files that are not remote ---
+    # Step 3: Upload local files that are not remote
     foreach ($file in $localFiles) {
         if ($remoteFileNames.Contains($file.Name)) {
             Write-Log "⏭️ Skipping '$($file.Name)' — already exists."
@@ -389,16 +333,58 @@ if ($global:RateLimit.Remaining -is [int] -and $global:RateLimit.Remaining -lt 2
         }
     }
 
-    # --- Step 4: Recurse into subdirectories ---
+    # Step 4: Recurse into subdirectories
     foreach ($folder in $localFolders) {
         $newRemotePath = "$CurrentRemotePath/$($folder.Name)"
         Copy-FilesToOneDrive -CurrentLocalPath $folder.FullName -CurrentRemotePath $newRemotePath
     }
 }
 
-# =================================================================
-# =================== SCRIPT EXECUTION STARTS HERE ================
-# =================================================================
+#==================================================================
+# ✨ SCRIPT EXECUTION ✨
+#==================================================================
+
+# === LOGGING, PATHS, AND PRE-CHECKS ===
+$logDir = "C:\tmp\ODHF_Logs"
+if (-not (Test-Path $logDir)) { New-Item -Path $logDir -ItemType Directory | Out-Null }
+$logFile = Join-Path $logDir "$username.txt"
+
+$baseLocalRoot    = "\\<YOUR-DATA-SERVER>\<YOUR-HOME-FOLDERS-DIR" # UPDATE THIS LINE
+$localPath        = Join-Path $baseLocalRoot $username
+$userPrincipalName = "$($username)@COMPANY.com" # UPDATE THIS LINE
+$remoteFolder     = "Home Folder"
+$LargeFileThreshold = 15 * 1024 * 1024 # 15 MB
+$headers = @{}
+
+if (-not (Test-Path -LiteralPath $localPath)) {
+    Write-Log "❌ Local folder not found: $localPath. Please check the username and network path."
+    exit
+}
+
+try {
+    Write-Log "`n📊 Checking initial API rate limits..."
+    $checkUri = "https://graph.microsoft.com/v1.0/users?`$top=1&`$select=id"
+    Invoke-GraphApiRequestWithRetry -Splat @{ Uri = $checkUri; Headers = $headers; Method = 'GET' } | Out-Null
+    Write-Log "--------------------------------------------------"
+    Write-Log "Current API Quota Remaining: $($global:RateLimit.Remaining) / $($global:RateLimit.Limit)"
+    Write-Log "--------------------------------------------------"
+} catch {
+    # This catch block needs to be updated to show the real error
+    Write-Log "⚠️ Could not check initial rate limits. Full error: $($_.Exception.Message)"
+}
+
+# === CONFIRMATION ===
+Write-Log "`n🧾 Summary of Operation:"
+Write-Log "--------------------------------------------------"
+Write-Log "📁 Source (On-Prem): '$localPath'"
+Write-Log "👤 Target User: '$userPrincipalName'"
+Write-Log "☁️  OneDrive Destination: '$remoteFolder'"
+Write-Log "--------------------------------------------------"
+$confirm = Read-Host "`nProceed with migration? (Y/N)"
+if ($confirm -ne 'Y') {
+    Write-Log "❌ Operation cancelled by user."
+    exit
+}
 
 # === GET DRIVE ID ===
 try {
@@ -455,6 +441,6 @@ Write-Log "`n✅ Migration process finished!"
 Write-Log "--------------------------------------------------"
 Write-Log "📄 Files scanned: $global:filesScanned"
 Write-Log "📁 Folders scanned: $global:foldersScanned"
-Write-Log ("📦 Total data transferred: {0:N2} MB" -f ($global:bytesTransferred / 1MB))
+Write-Log ("📦 Total data transferred: {0:N2} MB" -f ($global:BytesTransferred / 1MB))
 Write-Log ("⏱️ Total time: {0:N0} minutes and {1} seconds" -f $duration.TotalMinutes, $duration.Seconds)
 Write-Log "--------------------------------------------------"
