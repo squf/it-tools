@@ -103,7 +103,25 @@ Get-AzStorageBlob -Container '$web' -Context $ctx | ForEach-Object {
     Write-Output $fullUrl
 }
 ```
+-----
+## Security
 
-* You can also, if you prefer, just up-arrow through all of your saved Powershell cmdlet history the next time you have to do this -- it's just my opinion that this is not a very reliable thing and you may end up losing or overwriting that history by the time you need it again. Worst case scenario you can always tool around with the generic cmdlets a bit until you remember what you used the first-time, or go poke around in the Azure GUI and locate the associated Storage Account and related resources.
+* I haven't set this up yet, and this will require some effort with our vendor in my case to enable, but the obvious choice from a security perspective would be to set-up [Azure Front Door](https://learn.microsoft.com/en-us/azure/frontdoor/front-door-overview)
+
+**Overview of how Azure Front Door solves the security problem**
+
+* **Hides the Origin:** You point your DNS to Azure Front Door. No one would ever see or access your static site URL directly.
+
+* **Locks Down Storage:** Configure the Storage Account firewall to only accept traffic from Azure Front Door, effectively making it private to the rest of the world.
+
+* **Applies a Web Application Firewall (WAF):** You can attach a WAF policy to Front Door to automatically block web scraping bots, vulnerability scanners, and common cyberattacks.
+
+* **Creates Smart Access Rules:** At the Front Door level, you can create rules to allow traffic ONLY IF:
+
+* The request comes from your company's IP address.
+
+* OR the request contains a special, secret HTTP header that you share with your vendor (e.g., `X-Vendor-Token: SomeSecretValue`). The vendor would configure their system to add this header when fetching your static site contents. This is a very common and secure way to allow B2B API traffic.
+
+-----
 
 Hope this helps! 🎉
