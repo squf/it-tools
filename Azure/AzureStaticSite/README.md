@@ -83,3 +83,27 @@ Write-Output $storageAccount.PrimaryEndpoints.Web
 # List all files (blobs) in the '$web' container
 Get-AzStorageBlob -Container '$web' -Context $ctx
 ```
+-----
+## Specific & on-going use
+
+* The above cmdlets are useful for a first-time static site set-up and getting a document uploaded, I highly recommend jotting down the values entered and used during the above process for future / on-going use.
+
+* For example at my company I had to find a way to host a PDF on a publicly accessible website for us to use with another service, so I came up with the above. However, I knew that this PDF would be getting updated within the next week or so, so I saved all the variables I used above into a separate .txt file for later use. This way I will be able to quickly go through and set my `$storageAccount` and `$ctx` et al. variables to re-use the precise same Storage Accounts / Blob resources / etc. as I did before, and keep everything in one neat little blob.
+
+* On that note, there is also this handy piece of code for listing ALL endpoint URL's in your associated blob storage:
+
+```
+# Get the primary web URL for the site
+Write-Output $storageAccount.PrimaryEndpoints.Web
+
+# List all files and their full URLs
+$webEndpoint = $storageAccount.PrimaryEndpoints.Web
+Get-AzStorageBlob -Container '$web' -Context $ctx | ForEach-Object {
+    $fullUrl = "$webEndpoint$($_.Name)"
+    Write-Output $fullUrl
+}
+```
+
+* You can also, if you prefer, just up-arrow through all of your saved Powershell cmdlet history the next time you have to do this -- it's just my opinion that this is not a very reliable thing and you may end up losing or overwriting that history by the time you need it again. Worst case scenario you can always tool around with the generic cmdlets a bit until you remember what you used the first-time, or go poke around in the Azure GUI and locate the associated Storage Account and related resources.
+
+Hope this helps! 🎉
