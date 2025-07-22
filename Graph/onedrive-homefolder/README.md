@@ -51,7 +51,7 @@ The `ODHF.ps1` script is completely standalone and handles authentication automa
 
 ### Step 1: Configure the Script
 
-Open `ODHF.ps1` in an editor and fill in the configuration variables at the top:
+Open `ODHF.ps1` in an editor and fill in the following configuration variables:
 
 1.  **Authentication Details:** Add your Entra app's `clientId`, `clientSecret`, and `tenantId`.
 2.  **Path Details:** Set the `$baseLocalRoot` variable to the UNC path of your on-premises user home directories (e.g., `\\server\users`).
