@@ -1,48 +1,85 @@
-# === Setup & enable static web hosting ===
+This guide outlines the process for hosting files, such as PDFs, on an Azure Storage Account using the **Static Website** feature.
 
-* Check Az module is installed
+---
 
-`Get-InstalledModule -Name Az -AllVersions | select Name,Version`
+## General Steps & Templates
 
-* If not installed, run
+This section provides generic PowerShell cmdlets. Replace placeholders like `<your-value>` with your specific names.
 
-`Install-Module -Name Az -Repository PSGallery -Force`
+### 1. Connect to Azure ☁️
 
-* Connect to Azure
+First, ensure you're connected to the correct Azure account and subscription.
 
-`Connect-AzAccount`
-
-* Set subscription context
-
-`$context = Get-AzSubscription -SubscriptionId <subscription-id>`
-`Set-AzContext $context`
-
-* Get storage account
-
-`$storageAccount = Get-AzStorageAccount -ResourceGroupName "<resource-group-name>" -AccountName "<storage-account-name>"`
-`$ctx = $storageAccount.Context`
-
-* Enable static web hosting
-
-`Enable-AzStorageStaticWebsite -Context $ctx -IndexDocument <index-document-name> -ErrorDocument404Path <error-document-name>`
-
-# === Upload files ===
-
-* Upload objects to the $web container
+PowerShell
 
 ```
-# upload a file
-set-AzStorageblobcontent -File "<path-to-file>" -Container `$web -Blob "<blob-name>" -Context $ctx
+# Check that the Az module is installed
+Get-InstalledModule -Name Az -AllVersions | Select-Object Name, Version
+
+# Connect to your Azure account
+Connect-AzAccount
+
+# Set your subscription context
+$subId = "<your-subscription-id>" # This is displayed immediately after you run Connect-AzAccount FYI
+$context = Get-AzSubscription -SubscriptionId $subId
+Set-AzContext $context
 ```
->If the browser prompts users users to download the file instead of rendering the contents, you can append -Properties @{ ContentType = "text/html; charset=utf-8";} to the command.
 
->In my case I was looking to host a PDF so I used ContentType = "application/pdf" instead
+### 2. Enable Static Website 🚀
 
-# === Find website URL ===
+Next, enable the static website feature on your desired storage account. This will automatically create the special **`$web`** container.
 
-* Find the public URL of the static site
+PowerShell
 
 ```
-$storageAccount = Get-AzStorageAccount -ResourceGroupName "<resource-group-name>" -Name "<storage-account-name>"
+# Get the target storage account and its context
+$rgName = "<your-resource-group>"
+$accountName = "<your-storage-account>"
+$storageAccount = Get-AzStorageAccount -ResourceGroupName $rgName -Name $accountName
+$ctx = $storageAccount.Context
+
+# Enable the static website feature
+Enable-AzStorageStaticWebsite -Context $ctx -IndexDocument "index.html" -ErrorDocument404Path "404.html"
+```
+
+### 3. Upload Files 📄
+
+Upload your files to the **`$web`** container using the following command.
+
+PowerShell
+
+```
+# Upload a file to the '$web' container
+Set-AzStorageBlobContent -File "<path-to-your-local-file>" `
+    -Container '$web' `
+    -Blob "<name-of-blob-in-azure>" `
+    -Context $ctx
+```
+
+> ⭐ Important Note on ContentType!
+> 
+> By default, browsers might try to download your file instead of displaying it. To fix this, you must set the correct ContentType.
+> 
+> - For a PDF file, add this parameter:
+>     
+>     -Properties @{ 'ContentType' = 'application/pdf' }
+>     
+> - For an HTML file, use:
+>     
+>     -Properties @{ 'ContentType' = 'text/html; charset=utf-8' }
+>     
+
+### 4. Find Your Site Info 🔗
+
+Use these commands to find your website's public URL or list its contents.
+
+PowerShell
+
+```
+# Get the primary web endpoint URL
+$storageAccount = Get-AzStorageAccount -ResourceGroupName "<your-resource-group>" -Name "<your-storage-account>"
 Write-Output $storageAccount.PrimaryEndpoints.Web
+
+# List all files (blobs) in the '$web' container
+Get-AzStorageBlob -Container '$web' -Context $ctx
 ```
