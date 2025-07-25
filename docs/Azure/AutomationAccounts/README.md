@@ -44,7 +44,7 @@ First, create the Azure Automation Account and enable its System-Assigned Manage
 
 ### 2. Assign API Permissions 🔐
 
-The necessary API permissions for your Azure Automation account will vary depending on what you are doing with your end script. In this example, I set-up an Automation Account to manage a runbook which checks: Group Membership in Entra, Exchange Online Shared Mailboxes & Resources, then add the Shared Mailboxes & Resources to their respective Entra Groups if they were missing as members. **This is only an example and should not be followed exactly for your case!**
+The necessary API permissions for your Azure Automation account will vary depending on what you are doing with your end script. In this example, I set-up an Automation Account to manage a runbook which checks: Group Membership in Entra, Exchange Online Shared Mailboxes & Resources, then add the Shared Mailboxes & Resources to their respective Entra Groups if they were missing as members. This was the solution I arrived at since I could not find a way to make a dynamic group in Entra targeting Exchange attributes. **This is only an example and should not be followed exactly for your case!**
 
 The Managed Identity needs API permissions to manage group members and connect to Exchange. We will assign these programmatically using a "cloning" method, as this proved to be the most reliable way in my experience.
 
