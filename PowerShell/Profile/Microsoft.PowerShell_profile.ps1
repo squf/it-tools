@@ -1,5 +1,5 @@
 # ==============================================================================
-# SQUF'S BASH-LIKE POWERSHELL PROFILE
+# squf'S BASH-LIKE POWERSHELL PROFILE
 # Target: PowerShell 7+ | Location: $HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
 # ==============================================================================
 
@@ -109,3 +109,9 @@ function how {
 # --- 6. GRAPH SDK HELPER ---
 # Ensuring we always point to the local local system path for modules
 $env:PSModulePath = "C:\Program Files\PowerShell\Modules;" + $env:PSModulePath
+
+# --- 7. FINAL ADDENDUMS ---
+
+# Enable the 'List' view for suggestions
+Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+Set-PSReadLineOption -PredictionViewStyle ListView
