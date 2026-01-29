@@ -36,6 +36,25 @@ A surgical strike on the help system. It reaches into the help object and return
 
 ---
 
+## 🧠 Intelligent Autocomplete
+
+This profile leverages **PSReadLine Predictive IntelliSense** to provide a high-performance, visual completion experience directly in the shell.
+
+### Features:
+* **Predictive Suggestions:** As you type, the shell suggests commands based on your local history and installed module capabilities.
+* **List View Navigation:** Instead of cycling through commands one-by-one, hit the **Up Arrow** or start typing to see a "Floating List" of possibilities beneath your cursor.
+* **Context Awareness:** Highly effective for complex Microsoft Graph and Entra ID cmdlets, reducing the need to memorize long parameter strings.
+
+### Key Commands in Profile:
+```powershell
+# Set suggestions to pull from history and plugins
+Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+
+# Change the view from 'Inline' to 'ListView' for better visibility
+Set-PSReadLineOption -PredictionViewStyle ListView
+```
+---
+
 ## 📂 Included Aliases
 
 | Command | PowerShell Equivalent | Function |
