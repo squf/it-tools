@@ -54,7 +54,58 @@ Set-PSReadLineOption -Colors @{
     String             = "$([char]27)[38;5;150m"  # Strings in quotes will be Greenish
     Variable           = "$([char]27)[38;5;209m"  # Variables ($var) will be Salmon/Orange
 }
+# --- 4. THE 'MAN' FUNCTION ---
+function man {
+    param([string]$Command)
+    if ($Command) {
+        # This reaches into the help object and pulls ONLY the example blocks
+        (Get-Help $Command).examples | Out-String | Write-Host -ForegroundColor Yellow
+    } else {
+        Write-Host "Usage: man <cmdlet>" -ForegroundColor Gray
+    }
+}
 
-# --- 4. GRAPH SDK HELPER ---
+# --- 5. THE 'HOW' COMMAND ---
+function how {
+    param([string]$topic)
+
+    $cheats = @{
+        "graph" = @(
+            "Connect: Connect-MgGraph -Scopes 'User.Read.All'",
+            "Find User: Get-MgUser -Filter `"displayName eq 'squf'`"",
+            "Check Scopes: (Get-MgContext).Scopes"
+        )
+        "files" = @(
+            "Find text: grep 'search' file.ps1",
+            "List local: ll",
+            "Make file: touch newfile.txt"
+        )
+        "entraid" = @(
+            "List Groups: Get-MgGroup -All",
+            "User Memberships: Get-MgUserMemberOf -UserId <ID>"
+        )
+        "upn" = @(
+            "Check UPN: Get-MgUser -UserId <Email> | Select UserPrincipalName",
+            "Update UPN: Update-MgUser -UserId <ID> -UserPrincipalName <NewUPN>"
+        )
+        "aliases" = @(
+            "man: Get-Help <cmdlet> -Examples",
+            "touch: New-Item -ItemType File <filename>",
+            "grep: Select-String 'text' <file>",
+            "which: Get-Command <cmdlet>",
+            "ll: ls -l"
+        )
+    }
+
+    if ($topic -and $cheats.ContainsKey($topic)) {
+        Write-Host "`n--- Cheat Sheet for [$topic] ---" -ForegroundColor Cyan
+        $cheats[$topic] | ForEach-Object { Write-Host "  > $_" -ForegroundColor Yellow }
+        Write-Host ""
+    } else {
+        Write-Host "Usage: how <topic>. Available topics: $($cheats.Keys -join ', ')" -ForegroundColor Gray
+    }
+}
+
+# --- 6. GRAPH SDK HELPER ---
 # Ensuring we always point to the local local system path for modules
 $env:PSModulePath = "C:\Program Files\PowerShell\Modules;" + $env:PSModulePath
