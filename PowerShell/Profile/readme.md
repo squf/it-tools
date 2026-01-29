@@ -2,7 +2,7 @@ My good friend Gemini put this readme together for YOU! Say thank you Gemini.
 
 ---
 
-# 🚀 Squf's Bash-Like PowerShell Profile
+# 🚀 squf's Bash-Like PowerShell Profile
 
 A lightweight, high-performance PowerShell configuration designed for Systems Administrators and Cloud Architects. This profile focuses on **transient execution**, **dependency isolation** (specifically for the Microsoft Graph SDK), and **Linux-style ergonomics**.
 
