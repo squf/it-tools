@@ -1,5 +1,5 @@
-[!NOTE]
-For context, ive been trying to fix ssl inspection breaking wsl2 bash commands on and off for several months, and ive been using ssl bypass cmdlete as a crutch for awhile now. ive used a lot of various ai models to try and resolve this but they all tended to lead me down rabbit holes that lead nowhere. today, Claude Opus 4.7 oneshot it and it actually works and also makes a lot of sense, so im sharing the details here for my own future reference 
+>[!NOTE]
+> For context, ive been trying to fix ssl inspection breaking wsl2 bash commands on and off for several months, and ive been using ssl bypass cmdlete as a crutch for awhile now. ive used a lot of various ai models to try and resolve this but they all tended to lead me down rabbit holes that lead nowhere. today, Claude Opus 4.7 oneshot it and it actually works and also makes a lot of sense, so im sharing the details here for my own future reference 
 
 
 
