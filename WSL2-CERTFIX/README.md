@@ -46,6 +46,7 @@ Wrong cert extracted — people grab the leaf cert instead of the root CA
 Wrong file format — .cer (DER binary) vs .crt/.pem (Base64 text) — Ubuntu's update-ca-certificates needs PEM format with a .crt extension
 
 Wrong directory — must go in /usr/local/share/ca-certificates/, not /etc/ssl/certs/ directly
+
 Forgot update-ca-certificates — just dropping the file isn't enough
 
 App-specific CA stores — Node.js and Python ignore the system store unless you set those env vars (which you already have ✅)
