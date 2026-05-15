@@ -1,0 +1,25 @@
+{
+  "auth": {
+    "rolesSource": "/api/get-roles",
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/b96529d7-68fa-4d77-8ce6-8b28fc40016b/v2.0",
+          "clientIdSettingName": "AAD_CLIENT_ID",
+          "clientSecretSettingName": "AAD_CLIENT_SECRET"
+        }
+      }
+    }
+  },
+  "routes": [
+    { "route": "/api/trigger-batch", "allowedRoles": ["admin"] },
+    { "route": "/api/update-sso", "allowedRoles": ["admin"] },
+    { "route": "/api/*", "allowedRoles": ["admin", "viewer"] },
+    { "route": "/*", "allowedRoles": ["authenticated"] }
+  ],
+  "responseOverrides": {
+    "401": { "redirect": "/.auth/login/aad", "statusCode": 302 }
+  },
+  "navigationFallback": { "rewrite": "/index.html" },
+  "platform": { "apiRuntime": "node:18" }
+}
