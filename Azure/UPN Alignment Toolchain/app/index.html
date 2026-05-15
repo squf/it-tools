@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — UPN Control Center</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    
+    <h1 class="page-title">📊 Dashboard</h1>
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span id="progress-label-left">Loading…</span>
+        <span id="progress-label-right"></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width:0%">0%</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat-card accent"><div class="value" id="stat-scope">—</div><div class="label">Total In Scope</div></div>
+      <div class="stat-card success"><div class="value" id="stat-migrated">—</div><div class="label">Migrated</div></div>
+      <div class="stat-card warning"><div class="value" id="stat-pending">—</div><div class="label">Pending</div></div>
+      <div class="stat-card danger"><div class="value" id="stat-failed">—</div><div class="label">Failed</div></div>
+      <div class="stat-card info"><div class="value" id="stat-dryrun">—</div><div class="label">Dry Run</div></div>
+    </div>
+    <h2 style="font-size:16px;margin-bottom:12px">Recent Batches</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Batch ID</th><th>Initiator</th><th>Users</th><th>Status</th><th>Dry Run</th><th>Time</th></tr></thead>
+        <tbody id="batches-tbody"><tr><td colspan="6" class="empty"><span class="spinner"></span> Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/nav.js"></script>
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>
