@@ -21,6 +21,14 @@ Organizations with hybrid Active Directory / Entra ID (Azure AD) environments co
 
 This toolchain provides a **fully automated, auditable, batch-capable pipeline** to align UPNs to primary SMTP addresses in hybrid AD/Entra environments, with a web-based control center for execution and monitoring.
 
+This is not my preferred architecture, I would instead pick full standardization if I were making the executive level decisions. I would standardize UPN / SMTP/ and sAMA values to match `firstname.lastname` in my ideal environment.
+
+Given the constraints of the project at the company I built this tool for, this was the direction we were instructed to follow. I built this tool to make this task as simple as possible, since I didn't want to spend much effort manually on a task that does not align with industry preferred identity standardization best practices.
+
+This repo exists to showcase something neat I built at work, additionally the idea behind the tool is useful broadly across many projects, e.g. building a full toolchain in Azure and surfacing a static web app to control it all from. I do not expect anybody to just copy this entire repo and recreate it 1:1 in their environment. I would also generally recommend if you do intend to do that, run it through an AI tool for help patching it into your environment e.g., Claude Code, Gemini CLI, OpenAI Codex, Grok Build, et al.
+
+A lot of personally identifying information has been stripped out of every one of these files making it impossible to simply download these files and plug-and-play without much configuration on your end. This repo is not production ready as-is, buyer beware, etc. etc.
+
 ---
 
 ## Architecture
