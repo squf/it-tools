@@ -232,7 +232,7 @@ These were discovered during live deployment and testing:
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License
 
 ---
 
