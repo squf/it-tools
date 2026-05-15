@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users — UPN Control Center</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    
+    <h1 class="page-title">👥 User Browser</h1>
+    <div class="controls">
+      <input type="search" id="user-search" placeholder="Search name, SAM, UPN…" style="flex:1;min-width:200px">
+      <select id="user-filter">
+        <option value="">All statuses</option>
+        <option value="dryrun">Dry Run</option>
+        <option value="success">Success</option>
+        <option value="pending">Pending</option>
+        <option value="failed">Failed</option>
+        <option value="skipped">Skipped</option>
+      </select>
+      <span id="user-count" class="text-sm text-muted"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>SAM</th><th>Current UPN</th><th>Target UPN</th><th>Status</th><th>Last Updated</th></tr></thead>
+        <tbody id="users-tbody"><tr><td colspan="6" class="empty"><span class="spinner"></span> Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/nav.js"></script>
+    <script src="/js/users.js"></script>
+</body>
+</html>
