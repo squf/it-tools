@@ -103,7 +103,7 @@ A PowerShell runbook that executes on an on-premises Hybrid Runbook Worker (co-l
 
 1. **Fetches** the AD user object
 2. **Snapshots** current state (UPN, proxy addresses, extension attributes)
-3. **Validates scope** against a 6-stage filter pipeline (OU, enabled, identity tag, primary SMTP, etc.)
+3. **Validates scope** against a 5-stage filter pipeline (OU, enabled, identity tag, primary SMTP, etc.)
 4. **Resolves target** UPN from primary SMTP address
 5. **Checks conflicts** — ensures no other user owns the target UPN
 6. **Applies changes** (or reports what would change in DryRun mode):
