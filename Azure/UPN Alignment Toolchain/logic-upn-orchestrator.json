@@ -1,0 +1,797 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.1.0.0",
+  "metadata": {
+    "description": "UPN Alignment Project \u2014 Logic App Orchestrator",
+    "author": "squf \u2014 Systems Administrator, IT Dept",
+    "project": "Github \u2014 https://github.com/squf/it-tools/tree/main/Azure/UPN%20Alignment%20Toolchain",
+    "changeLog": {
+      "v1.0.0 (2026-05-12)": "Initial build",
+      "v1.1.0 (2026-05-12)": [
+        "FIX 1: Gate_Check_Running_Jobs \u2014 OData filter changed from 'status' to 'properties/status'",
+        "FIX 2: hybridWorkerGroup parameter default fixed to remove leading space which caused runbook job submission to fail",
+        "FIX 3: Build_TargetUsers_JSON \u2014 changed from string() to join(,',') for runbook bare-string parser compatibility",
+        "FIX 4: Update_Batch_Complete + Update_Batch_Job_Failed \u2014 MERGE changed to PATCH, added Accept header",
+        "FIX 5: Upsert_Migration_Target \u2014 removed If-Match: * header to enable InsertOrReplace (upsert)"
+      ]
+    }
+  },
+  "parameters": {
+    "subscriptionId": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Subscription ID"
+      }
+    },
+    "aaResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource group containing Azure Automation account with Hybrid Worker configured"
+      }
+    },
+    "aaName": {
+      "type": "string",
+      "defaultValue": "[replace with your Azure Automation Account name]",
+      "metadata": {
+        "description": "Automation Account name"
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[replace with your Storage Account name]",
+      "metadata": {
+        "description": "Storage account for Table Storage"
+      }
+    },
+    "hybridWorkerGroup": {
+      "type": "string",
+      "defaultValue": "[replace with your Hybrid Worker Group name]",
+      "metadata": {
+        "description": "Hybrid Worker group name to run the runbook on"
+      }
+    },
+    "runbookName": {
+      "type": "string",
+      "defaultValue": "[replace with your Runbook name that the Logic App will trigger]",
+      "metadata": {
+        "description": "Name of the published runbook"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[replace with the location for new resources, e.g. eastus]",
+      "metadata": {
+        "description": "Azure region for deployed resources"
+      }
+    },
+    "maxBatchSize": {
+      "type": "int",
+      "defaultValue": 25,
+      "metadata": {
+        "description": "Maximum number of users allowed per batch"
+      }
+    }
+  },
+  "variables": {
+    "logicAppName": "logic-upn-orchestrator",
+    "automationBaseUri": "[concat('https://management.azure.com/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('aaResourceGroup'), '/providers/Microsoft.Automation/automationAccounts/', parameters('aaName'))]",
+    "storageBaseUri": "[concat('https://', parameters('storageAccountName'), '.table.core.windows.net')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[variables('logicAppName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "tags": {
+        "Project": "UPN-Alignment",
+        "CostCenter": "IT",
+        "ManagedBy": "User"
+      },
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "maxBatchSize": {
+              "type": "Int",
+              "defaultValue": "[parameters('maxBatchSize')]"
+            },
+            "automationBaseUri": {
+              "type": "String",
+              "defaultValue": "[variables('automationBaseUri')]"
+            },
+            "storageBaseUri": {
+              "type": "String",
+              "defaultValue": "[variables('storageBaseUri')]"
+            },
+            "hybridWorkerGroup": {
+              "type": "String",
+              "defaultValue": "[parameters('hybridWorkerGroup')]"
+            },
+            "runbookName": {
+              "type": "String",
+              "defaultValue": "[parameters('runbookName')]"
+            }
+          },
+          "triggers": {
+            "When_a_HTTP_request_is_received": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "targetUsers": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "dryRun": {
+                      "type": "boolean"
+                    },
+                    "initiator": {
+                      "type": "string"
+                    },
+                    "batchId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "targetUsers",
+                    "dryRun",
+                    "initiator"
+                  ]
+                },
+                "method": "POST"
+              }
+            }
+          },
+          "actions": {
+            "Initialize_BatchId": {
+              "type": "InitializeVariable",
+              "runAfter": {},
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "batchId",
+                    "type": "string",
+                    "value": "@{coalesce(triggerBody()?['batchId'], guid())}"
+                  }
+                ]
+              }
+            },
+            "Initialize_Timestamp": {
+              "type": "InitializeVariable",
+              "runAfter": {},
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "batchTimestamp",
+                    "type": "string",
+                    "value": "@{utcNow()}"
+                  }
+                ]
+              }
+            },
+            "Initialize_GateFailures": {
+              "type": "InitializeVariable",
+              "runAfter": {},
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "gateFailures",
+                    "type": "array",
+                    "value": []
+                  }
+                ]
+              }
+            },
+            "Initialize_JobId": {
+              "type": "InitializeVariable",
+              "runAfter": {},
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "jobId",
+                    "type": "string",
+                    "value": "@{guid()}"
+                  }
+                ]
+              }
+            },
+            "Gate_Check_Batch_Size": {
+              "type": "If",
+              "runAfter": {
+                "Initialize_BatchId": [
+                  "Succeeded"
+                ],
+                "Initialize_Timestamp": [
+                  "Succeeded"
+                ],
+                "Initialize_GateFailures": [
+                  "Succeeded"
+                ],
+                "Initialize_JobId": [
+                  "Succeeded"
+                ]
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(triggerBody()['targetUsers'])",
+                      "@parameters('maxBatchSize')"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Append_Batch_Size_Failure": {
+                  "type": "AppendToArrayVariable",
+                  "runAfter": {},
+                  "inputs": {
+                    "name": "gateFailures",
+                    "value": "@concat('Batch size (', string(length(triggerBody()['targetUsers'])), ') exceeds maximum of ', string(parameters('maxBatchSize')))"
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            },
+            "Gate_Check_Running_Jobs": {
+              "type": "Http",
+              "runAfter": {
+                "Gate_Check_Batch_Size": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": {
+                "method": "GET",
+                "uri": "@{concat(parameters('automationBaseUri'), '/jobs?$filter=properties/status%20eq%20%27Running%27&api-version=2023-11-01')}",
+                "authentication": {
+                  "type": "ManagedServiceIdentity",
+                  "audience": "https://management.azure.com/"
+                }
+              }
+            },
+            "Check_If_Jobs_Running": {
+              "type": "If",
+              "runAfter": {
+                "Gate_Check_Running_Jobs": [
+                  "Succeeded"
+                ]
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(body('Gate_Check_Running_Jobs')['value'])",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Append_Running_Job_Failure": {
+                  "type": "AppendToArrayVariable",
+                  "runAfter": {},
+                  "inputs": {
+                    "name": "gateFailures",
+                    "value": "Another Automation runbook job is currently running \u2014 wait for it to complete"
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            },
+            "Evaluate_All_Gates": {
+              "type": "If",
+              "runAfter": {
+                "Check_If_Jobs_Running": [
+                  "Succeeded"
+                ]
+              },
+              "expression": {
+                "and": [
+                  {
+                    "greater": [
+                      "@length(variables('gateFailures'))",
+                      0
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Response_Gate_Failed": {
+                  "type": "Response",
+                  "runAfter": {},
+                  "inputs": {
+                    "statusCode": 400,
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "status": "gate-failed",
+                      "batchId": "@variables('batchId')",
+                      "gateFailures": "@variables('gateFailures')",
+                      "timestamp": "@variables('batchTimestamp')"
+                    }
+                  }
+                },
+                "Terminate_Gate_Failed": {
+                  "type": "Terminate",
+                  "runAfter": {
+                    "Response_Gate_Failed": [
+                      "Succeeded"
+                    ]
+                  },
+                  "inputs": {
+                    "runStatus": "Cancelled"
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Write_Batch_Running": {
+                    "type": "Http",
+                    "runAfter": {},
+                    "inputs": {
+                      "method": "POST",
+                      "uri": "@{concat(parameters('storageBaseUri'), '/BatchHistory')}",
+                      "headers": {
+                        "x-ms-version": "2020-12-06",
+                        "Content-Type": "application/json",
+                        "Accept": "application/json;odata=nometadata",
+                        "Prefer": "return-no-content"
+                      },
+                      "body": {
+                        "PartitionKey": "batch",
+                        "RowKey": "@variables('batchId')",
+                        "Status": "running",
+                        "Initiator": "@triggerBody()['initiator']",
+                        "UserCount": "@length(triggerBody()['targetUsers'])",
+                        "DryRun": "@triggerBody()['dryRun']",
+                        "StartTime": "@variables('batchTimestamp')",
+                        "EndTime": "",
+                        "ErrorCount": 0,
+                        "TargetUsersList": "@join(triggerBody()['targetUsers'], ',')"
+                      },
+                      "authentication": {
+                        "type": "ManagedServiceIdentity",
+                        "audience": "https://storage.azure.com/"
+                      }
+                    }
+                  },
+                  "Build_TargetUsers_JSON": {
+                    "type": "Compose",
+                    "runAfter": {
+                      "Write_Batch_Running": [
+                        "Succeeded"
+                      ]
+                    },
+                    "inputs": "@join(triggerBody()['targetUsers'], ',')"
+                  },
+                  "Start_Runbook_Job": {
+                    "type": "Http",
+                    "runAfter": {
+                      "Build_TargetUsers_JSON": [
+                        "Succeeded"
+                      ]
+                    },
+                    "inputs": {
+                      "method": "PUT",
+                      "uri": "@{concat(parameters('automationBaseUri'), '/jobs/', variables('jobId'), '?api-version=2023-11-01')}",
+                      "headers": {
+                        "Content-Type": "application/json"
+                      },
+                      "body": {
+                        "properties": {
+                          "runbook": {
+                            "name": "@parameters('runbookName')"
+                          },
+                          "parameters": {
+                            "BatchId": "@variables('batchId')",
+                            "TargetUsers": "@outputs('Build_TargetUsers_JSON')",
+                            "DryRun": "@string(triggerBody()['dryRun'])",
+                            "ForceRevalidate": "True"
+                          },
+                          "runOn": "@parameters('hybridWorkerGroup')"
+                        }
+                      },
+                      "authentication": {
+                        "type": "ManagedServiceIdentity",
+                        "audience": "https://management.azure.com/"
+                      }
+                    }
+                  },
+                  "Poll_Until_Complete": {
+                    "type": "Until",
+                    "runAfter": {
+                      "Start_Runbook_Job": [
+                        "Succeeded"
+                      ]
+                    },
+                    "expression": "@or(equals(body('Get_Job_Status')?['properties']?['status'], 'Completed'), equals(body('Get_Job_Status')?['properties']?['status'], 'Failed'), equals(body('Get_Job_Status')?['properties']?['status'], 'Stopped'), equals(body('Get_Job_Status')?['properties']?['status'], 'Suspended'))",
+                    "limit": {
+                      "count": 120,
+                      "timeout": "PT30M"
+                    },
+                    "actions": {
+                      "Delay_15s": {
+                        "type": "Wait",
+                        "runAfter": {},
+                        "inputs": {
+                          "interval": {
+                            "count": 15,
+                            "unit": "Second"
+                          }
+                        }
+                      },
+                      "Get_Job_Status": {
+                        "type": "Http",
+                        "runAfter": {
+                          "Delay_15s": [
+                            "Succeeded"
+                          ]
+                        },
+                        "inputs": {
+                          "method": "GET",
+                          "uri": "@{concat(parameters('automationBaseUri'), '/jobs/', variables('jobId'), '?api-version=2023-11-01')}",
+                          "authentication": {
+                            "type": "ManagedServiceIdentity",
+                            "audience": "https://management.azure.com/"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "Check_Job_Completed": {
+                    "type": "If",
+                    "runAfter": {
+                      "Poll_Until_Complete": [
+                        "Succeeded"
+                      ]
+                    },
+                    "expression": {
+                      "and": [
+                        {
+                          "equals": [
+                            "@body('Get_Job_Status')['properties']['status']",
+                            "Completed"
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Get_Job_Output": {
+                        "type": "Http",
+                        "runAfter": {},
+                        "inputs": {
+                          "method": "GET",
+                          "uri": "@{concat(parameters('automationBaseUri'), '/jobs/', variables('jobId'), '/output?api-version=2023-11-01')}",
+                          "authentication": {
+                            "type": "ManagedServiceIdentity",
+                            "audience": "https://management.azure.com/"
+                          }
+                        }
+                      },
+                      "Extract_After_Start_Marker": {
+                        "type": "Compose",
+                        "runAfter": {
+                          "Get_Job_Output": [
+                            "Succeeded"
+                          ]
+                        },
+                        "inputs": "@last(split(string(body('Get_Job_Output')), '###BATCH_RESULT_JSON###'))"
+                      },
+                      "Extract_Before_End_Marker": {
+                        "type": "Compose",
+                        "runAfter": {
+                          "Extract_After_Start_Marker": [
+                            "Succeeded"
+                          ]
+                        },
+                        "inputs": "@first(split(string(outputs('Extract_After_Start_Marker')), '###END_BATCH_RESULT_JSON###'))"
+                      },
+                      "Parse_Batch_Result": {
+                        "type": "ParseJson",
+                        "runAfter": {
+                          "Extract_Before_End_Marker": [
+                            "Succeeded"
+                          ]
+                        },
+                        "inputs": {
+                          "content": "@trim(string(outputs('Extract_Before_End_Marker')))",
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "batchId": {
+                                "type": "string"
+                              },
+                              "batchStart": {
+                                "type": "string"
+                              },
+                              "batchEnd": {
+                                "type": "string"
+                              },
+                              "dryRun": {
+                                "type": "boolean"
+                              },
+                              "totalTargeted": {
+                                "type": "integer"
+                              },
+                              "success": {
+                                "type": "integer"
+                              },
+                              "skipped": {
+                                "type": "integer"
+                              },
+                              "failed": {
+                                "type": "integer"
+                              },
+                              "dryRunCount": {
+                                "type": "integer"
+                              },
+                              "deltaSync": {
+                                "type": "object",
+                                "properties": {
+                                  "triggered": {
+                                    "type": "boolean"
+                                  },
+                                  "error": {},
+                                  "server": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "error": {},
+                              "users": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "sam": {
+                                      "type": "string"
+                                    },
+                                    "displayName": {
+                                      "type": "string"
+                                    },
+                                    "oldUPN": {
+                                      "type": "string"
+                                    },
+                                    "newUPN": {
+                                      "type": "string"
+                                    },
+                                    "primarySMTP": {
+                                      "type": "string"
+                                    },
+                                    "status": {
+                                      "type": "string"
+                                    },
+                                    "skipReason": {},
+                                    "errors": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "timestamp": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "For_Each_User_Result": {
+                        "type": "Foreach",
+                        "runAfter": {
+                          "Parse_Batch_Result": [
+                            "Succeeded"
+                          ]
+                        },
+                        "foreach": "@body('Parse_Batch_Result')['users']",
+                        "actions": {
+                          "Upsert_Migration_Target": {
+                            "type": "Http",
+                            "runAfter": {},
+                            "inputs": {
+                              "method": "PUT",
+                              "uri": "@{concat(parameters('storageBaseUri'), '/MigrationTargets(PartitionKey=''user'',RowKey=''', items('For_Each_User_Result')['sam'], ''')')}",
+                              "headers": {
+                                "x-ms-version": "2020-12-06",
+                                "Content-Type": "application/json",
+                                "Accept": "application/json;odata=nometadata"
+                              },
+                              "body": {
+                                "PartitionKey": "user",
+                                "RowKey": "@items('For_Each_User_Result')['sam']",
+                                "DisplayName": "@items('For_Each_User_Result')['displayName']",
+                                "CurrentUPN": "@items('For_Each_User_Result')['oldUPN']",
+                                "TargetUPN": "@items('For_Each_User_Result')['newUPN']",
+                                "PrimarySMTP": "@items('For_Each_User_Result')['primarySMTP']",
+                                "Status": "@items('For_Each_User_Result')['status']",
+                                "SkipReason": "@coalesce(items('For_Each_User_Result')['skipReason'], '')",
+                                "BatchId": "@body('Parse_Batch_Result')['batchId']",
+                                "LastUpdated": "@items('For_Each_User_Result')['timestamp']"
+                              },
+                              "authentication": {
+                                "type": "ManagedServiceIdentity",
+                                "audience": "https://storage.azure.com/"
+                              }
+                            }
+                          },
+                          "Insert_Audit_Log": {
+                            "type": "Http",
+                            "runAfter": {
+                              "Upsert_Migration_Target": [
+                                "Succeeded"
+                              ]
+                            },
+                            "inputs": {
+                              "method": "POST",
+                              "uri": "@{concat(parameters('storageBaseUri'), '/AuditLog')}",
+                              "headers": {
+                                "x-ms-version": "2020-12-06",
+                                "Content-Type": "application/json",
+                                "Accept": "application/json;odata=nometadata",
+                                "Prefer": "return-no-content"
+                              },
+                              "body": {
+                                "PartitionKey": "@formatDateTime(utcNow(), 'yyyy-MM-dd')",
+                                "RowKey": "@{concat(formatDateTime(utcNow(), 'yyyy-MM-ddTHH:mm:ss.fffZ'), '-upn-', items('For_Each_User_Result')['sam'])}",
+                                "Actor": "@triggerBody()['initiator']",
+                                "Action": "upn-alignment",
+                                "Target": "@items('For_Each_User_Result')['sam']",
+                                "OldValue": "@items('For_Each_User_Result')['oldUPN']",
+                                "NewValue": "@items('For_Each_User_Result')['newUPN']",
+                                "Status": "@items('For_Each_User_Result')['status']",
+                                "BatchId": "@body('Parse_Batch_Result')['batchId']",
+                                "DryRun": "@body('Parse_Batch_Result')['dryRun']"
+                              },
+                              "authentication": {
+                                "type": "ManagedServiceIdentity",
+                                "audience": "https://storage.azure.com/"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "Determine_Batch_Status": {
+                        "type": "Compose",
+                        "runAfter": {
+                          "For_Each_User_Result": [
+                            "Succeeded"
+                          ]
+                        },
+                        "inputs": "@if(greater(body('Parse_Batch_Result')['failed'], 0), if(greater(body('Parse_Batch_Result')['success'], 0), 'partial', 'failed'), if(body('Parse_Batch_Result')['dryRun'], 'dryrun-complete', 'completed'))"
+                      },
+                      "Update_Batch_Complete": {
+                        "type": "Http",
+                        "runAfter": {
+                          "Determine_Batch_Status": [
+                            "Succeeded"
+                          ]
+                        },
+                        "inputs": {
+                          "method": "PATCH",
+                          "uri": "@{concat(parameters('storageBaseUri'), '/BatchHistory(PartitionKey=''batch'',RowKey=''', variables('batchId'), ''')')}",
+                          "headers": {
+                            "x-ms-version": "2020-12-06",
+                            "Content-Type": "application/json",
+                            "Accept": "application/json;odata=nometadata",
+                            "If-Match": "*"
+                          },
+                          "body": {
+                            "Status": "@outputs('Determine_Batch_Status')",
+                            "EndTime": "@body('Parse_Batch_Result')['batchEnd']",
+                            "SuccessCount": "@body('Parse_Batch_Result')['success']",
+                            "SkippedCount": "@body('Parse_Batch_Result')['skipped']",
+                            "FailedCount": "@body('Parse_Batch_Result')['failed']",
+                            "DryRunCount": "@body('Parse_Batch_Result')['dryRunCount']",
+                            "ErrorCount": "@body('Parse_Batch_Result')['failed']"
+                          },
+                          "authentication": {
+                            "type": "ManagedServiceIdentity",
+                            "audience": "https://storage.azure.com/"
+                          }
+                        }
+                      },
+                      "Response_Success": {
+                        "type": "Response",
+                        "runAfter": {
+                          "Update_Batch_Complete": [
+                            "Succeeded"
+                          ]
+                        },
+                        "inputs": {
+                          "statusCode": 200,
+                          "headers": {
+                            "Content-Type": "application/json"
+                          },
+                          "body": {
+                            "status": "@outputs('Determine_Batch_Status')",
+                            "batchId": "@variables('batchId')",
+                            "result": "@body('Parse_Batch_Result')"
+                          }
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Update_Batch_Job_Failed": {
+                          "type": "Http",
+                          "runAfter": {},
+                          "inputs": {
+                            "method": "PATCH",
+                            "uri": "@{concat(parameters('storageBaseUri'), '/BatchHistory(PartitionKey=''batch'',RowKey=''', variables('batchId'), ''')')}",
+                            "headers": {
+                              "x-ms-version": "2020-12-06",
+                              "Content-Type": "application/json",
+                              "Accept": "application/json;odata=nometadata",
+                              "If-Match": "*"
+                            },
+                            "body": {
+                              "Status": "job-failed",
+                              "EndTime": "@utcNow()",
+                              "ErrorDetails": "@{coalesce(body('Get_Job_Status')?['properties']?['exception']?['message'], 'Runbook job did not complete successfully')}"
+                            },
+                            "authentication": {
+                              "type": "ManagedServiceIdentity",
+                              "audience": "https://storage.azure.com/"
+                            }
+                          }
+                        },
+                        "Response_Job_Failed": {
+                          "type": "Response",
+                          "runAfter": {
+                            "Update_Batch_Job_Failed": [
+                              "Succeeded"
+                            ]
+                          },
+                          "inputs": {
+                            "statusCode": 500,
+                            "headers": {
+                              "Content-Type": "application/json"
+                            },
+                            "body": {
+                              "status": "job-failed",
+                              "batchId": "@variables('batchId')",
+                              "jobId": "@variables('jobId')",
+                              "jobStatus": "@body('Get_Job_Status')?['properties']?['status']",
+                              "error": "@coalesce(body('Get_Job_Status')?['properties']?['exception']?['message'], 'Runbook job did not complete successfully')"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "logicAppName": {
+      "type": "string",
+      "value": "[variables('logicAppName')]"
+    },
+    "principalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Logic/workflows', variables('logicAppName')), '2019-05-01', 'Full').identity.principalId]"
+    }
+  }
+}
